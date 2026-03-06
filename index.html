@@ -858,6 +858,13 @@
     .kpi-row { grid-template-columns: 1fr 1fr; }
     .grid-2, .grid-3 { grid-template-columns: 1fr; }
   }
+  
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .role-chip {
+    transition: all 0.2s;
+    line-height: 1.3;
+  }
 </style>
 </head>
 <body>
@@ -869,7 +876,7 @@
   <button class="nav-btn" onclick="showScreen('chatbot')">💬 Chatbot Triaje</button>
   <button class="nav-btn" onclick="showScreen('medico')">🩺 Panel Médico</button>
   <button class="nav-btn" onclick="showScreen('admin')">⚙️ Panel Admin</button>
-  <span class="nav-badge">MOCKUP · Actividad 04</span>
+  <span class="nav-badge">MOCKUP · TRIAJEMEDIC — SISTEMA</span>
 </nav>
 
 <!-- ══════════════════════════════════════════
@@ -891,37 +898,63 @@
         <div class="stat-card"><div class="val">&lt;3s</div><div class="lbl">Tiempo de respuesta</div></div>
       </div>
     </div>
+
     <div class="login-right">
       <div class="form-title">Bienvenido</div>
-      <div class="form-sub">Ingresa con tus credenciales del sistema</div>
+      <div class="form-sub">Selecciona tu tipo de acceso e ingresa tus credenciales</div>
 
-      <div class="tab-row">
-        <div class="tab-item active">Iniciar Sesión</div>
-        <div class="tab-item" onclick="this.parentElement.querySelectorAll('.tab-item').forEach(t=>t.classList.remove('active'));this.classList.add('active')">Registrarse</div>
-      </div>
-
-      <div style="margin-bottom:16px;">
-        <div style="font-size:12px;font-weight:700;color:var(--text3);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px;">Perfil de acceso</div>
+      <!-- Solo 2 roles -->
+      <div style="margin-bottom:20px;">
+        <div style="font-size:12px;font-weight:700;color:var(--text3);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.5px;">¿Cómo ingresas?</div>
         <div class="role-select-row">
-          <div class="role-chip active" onclick="selectRole(this)"><span class="icon">🧑‍⚕️</span>Médico</div>
-          <div class="role-chip" onclick="selectRole(this)"><span class="icon">👤</span>Paciente</div>
-          <div class="role-chip" onclick="selectRole(this)"><span class="icon">🛠️</span>Admin</div>
+          <div class="role-chip active" id="chip-paciente" onclick="selectLoginRole('paciente')">
+            <span class="icon">🧑</span>
+            Paciente
+            <div style="font-size:10px;font-weight:400;color:inherit;opacity:0.75;margin-top:2px;">Triaje desde casa</div>
+          </div>
+          <div class="role-chip" id="chip-personal" onclick="selectLoginRole('personal')">
+            <span class="icon">🏥</span>
+            Personal médico
+            <div style="font-size:10px;font-weight:400;color:inherit;opacity:0.75;margin-top:2px;">Médico / Enfermera / Admin</div>
+          </div>
         </div>
       </div>
 
-      <div class="form-group">
-        <label>Correo electrónico</label>
-        <input type="email" placeholder="usuario@hospital.com" value="dr.garcia@hospital.com">
+      <!-- Campos dinámicos según rol -->
+      <div id="login-fields-paciente">
+        <div class="form-group">
+          <label>Correo electrónico o CI</label>
+          <input type="text" id="input-pac-user" placeholder="ej. 12345678 o correo@gmail.com" value="maria.rodriguez@gmail.com">
+        </div>
+        <div class="form-group">
+          <label>Contraseña</label>
+          <input type="password" id="input-pac-pass" placeholder="••••••••" value="••••••••">
+        </div>
+        <div style="font-size:12px;color:var(--text3);margin-bottom:16px;padding:10px 12px;background:var(--surface);border-radius:8px;border-left:3px solid var(--teal);">
+          💡 Como paciente accederás al <strong>chatbot de triaje</strong> para evaluar tus síntomas antes de llegar al hospital.
+        </div>
+        <button class="btn-primary" onclick="doLogin('paciente')">Ingresar al Triaje →</button>
       </div>
-      <div class="form-group">
-        <label>Contraseña</label>
-        <input type="password" placeholder="••••••••" value="••••••••">
+
+      <div id="login-fields-personal" style="display:none;">
+        <div class="form-group">
+          <label>Correo institucional</label>
+          <input type="email" id="input-per-user" placeholder="usuario@hospital.com" value="dr.garcia@hospital.com">
+        </div>
+        <div class="form-group">
+          <label>Contraseña</label>
+          <input type="password" id="input-per-pass" placeholder="••••••••" value="••••••••">
+        </div>
+        <div style="font-size:12px;color:var(--text3);margin-bottom:16px;padding:10px 12px;background:var(--surface);border-radius:8px;border-left:3px solid var(--blue);">
+          🏥 El acceso al <strong>panel médico o administrativo</strong> se determina automáticamente según tu rol institucional.
+        </div>
+        <button class="btn-primary" onclick="doLogin('personal')">Iniciar Sesión →</button>
       </div>
-      <button class="btn-primary" onclick="showScreen('medico')">Iniciar Sesión →</button>
-      <div class="form-divider">o accede rápido como</div>
-      <div style="display:flex;gap:8px;">
-        <button class="btn-sm" style="flex:1;justify-content:center;" onclick="showScreen('chatbot')">💬 Paciente</button>
-        <button class="btn-sm" style="flex:1;justify-content:center;" onclick="showScreen('admin')">⚙️ Admin</button>
+
+      <!-- Loading state (oculto por defecto) -->
+      <div id="login-loading" style="display:none;text-align:center;padding:20px 0;">
+        <div id="login-loader" style="width:40px;height:40px;border:3px solid var(--surface);border-top:3px solid var(--blue);border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 12px;"></div>
+        <div id="login-loading-text" style="font-size:14px;color:var(--text2);font-weight:500;">Verificando credenciales...</div>
       </div>
     </div>
   </div>
@@ -932,154 +965,50 @@
 ══════════════════════════════════════════ -->
 <div class="screen" id="screen-chatbot">
   <div class="chat-layout">
-    <!-- Sidebar -->
     <div class="chat-sidebar">
       <div class="sidebar-title">Sesiones activas</div>
-      <div class="patient-card active">
+      <div class="patient-card active" onclick="switchChat('MR', this)">
         <div class="avatar" style="background:linear-gradient(135deg,#EF4444,#DC2626)">MR</div>
-        <div class="patient-info">
-          <div class="name">María Rodríguez</div>
-          <div class="meta">Ahora mismo</div>
-        </div>
+        <div class="patient-info"><div class="name">María Rodríguez</div><div class="meta">Ahora mismo</div></div>
         <div class="urgency-pill u-urgente">Urgente</div>
       </div>
-      <div class="patient-card">
+      <div class="patient-card" onclick="switchChat('JM', this)">
         <div class="avatar" style="background:linear-gradient(135deg,#3B82F6,#2563EB)">JM</div>
-        <div class="patient-info">
-          <div class="name">Juan Mamani</div>
-          <div class="meta">hace 12 min</div>
-        </div>
+        <div class="patient-info"><div class="name">Juan Mamani</div><div class="meta">hace 12 min</div></div>
         <div class="urgency-pill u-prioritario">Prioritario</div>
       </div>
-      <div class="patient-card">
+      <div class="patient-card" onclick="switchChat('AS', this)">
         <div class="avatar" style="background:linear-gradient(135deg,#10B981,#059669)">AS</div>
-        <div class="patient-info">
-          <div class="name">Ana Suárez</div>
-          <div class="meta">hace 28 min</div>
-        </div>
+        <div class="patient-info"><div class="name">Ana Suárez</div><div class="meta">hace 28 min</div></div>
         <div class="urgency-pill u-no-urgente">No urgente</div>
       </div>
-      <div class="patient-card">
+      <div class="patient-card" onclick="switchChat('CP', this)">
         <div class="avatar" style="background:linear-gradient(135deg,#EF4444,#7C3AED)">CP</div>
-        <div class="patient-info">
-          <div class="name">Carlos Pinto</div>
-          <div class="meta">hace 45 min</div>
-        </div>
+        <div class="patient-info"><div class="name">Carlos Pinto</div><div class="meta">hace 45 min</div></div>
         <div class="urgency-pill u-emergente">Emergente</div>
       </div>
-
       <div style="margin-top:auto;">
         <div style="background:var(--surface2);border-radius:var(--radius);padding:14px;border:1px solid var(--border);">
           <div style="font-size:11px;font-weight:700;color:var(--text2);margin-bottom:8px;">Turno actual asignado</div>
-          <div style="font-size:24px;font-weight:700;color:var(--blue);">#A-047</div>
-          <div style="font-size:12px;color:var(--text3);margin-top:4px;">María Rodríguez</div>
+          <div id="chat-turno" style="font-size:24px;font-weight:700;color:var(--blue);">#A-047</div>
+          <div id="chat-turno-nombre" style="font-size:12px;color:var(--text3);margin-top:4px;">María Rodríguez</div>
         </div>
       </div>
     </div>
 
-    <!-- Main chat -->
     <div class="chat-main">
       <div class="chat-header">
         <div class="bot-icon">🤖</div>
         <div class="bot-info">
           <div class="bot-name">TriajeBot</div>
-          <div class="bot-status">En línea · Evaluando síntomas</div>
+          <div id="chat-status" class="bot-status">En línea · Evaluando síntomas</div>
         </div>
         <div class="progress-wrap">
-          <div class="progress-label">Progreso del triaje: 60%</div>
-          <div class="progress-bar"><div class="progress-fill" style="width:60%"></div></div>
+          <div class="progress-label" id="chat-progress-label">Progreso del triaje: 60%</div>
+          <div class="progress-bar"><div class="progress-fill" id="chat-progress-fill" style="width:60%"></div></div>
         </div>
       </div>
-
-      <div class="chat-messages">
-        <div class="msg bot">
-          <div class="msg-avatar">🤖</div>
-          <div>
-            <div class="msg-bubble">¡Hola! Soy TriajeBot. Te ayudaré a evaluar tus síntomas para determinar el nivel de atención que necesitas. ¿Cuál es tu nombre completo?</div>
-            <div class="msg-time">09:14</div>
-          </div>
-        </div>
-
-        <div class="msg user">
-          <div class="msg-avatar">👤</div>
-          <div>
-            <div class="msg-bubble">María Rodríguez</div>
-            <div class="msg-time">09:14</div>
-          </div>
-        </div>
-
-        <div class="msg bot">
-          <div class="msg-avatar">🤖</div>
-          <div>
-            <div class="msg-bubble">Hola María. Por favor, ¿cuántos años tienes?</div>
-            <div class="msg-time">09:14</div>
-          </div>
-        </div>
-
-        <div class="msg user">
-          <div class="msg-avatar">👤</div>
-          <div>
-            <div class="msg-bubble">32 años</div>
-            <div class="msg-time">09:15</div>
-          </div>
-        </div>
-
-        <div class="msg bot">
-          <div class="msg-avatar">🤖</div>
-          <div>
-            <div class="msg-bubble">Gracias. ¿Cuál es tu síntoma principal hoy?</div>
-            <div class="msg-time">09:15</div>
-          </div>
-        </div>
-
-        <div class="msg user">
-          <div class="msg-avatar">👤</div>
-          <div>
-            <div class="msg-bubble">Tengo dolor de pecho y dificultad para respirar desde hace 2 horas</div>
-            <div class="msg-time">09:15</div>
-          </div>
-        </div>
-
-        <div class="msg bot">
-          <div class="msg-avatar">🤖</div>
-          <div>
-            <div class="msg-bubble">
-              Entiendo. ¿Cómo describirías la intensidad del dolor de pecho?
-              <div class="option-chips">
-                <button class="option-chip" onclick="selectOption(this, 'chatbot')">Leve (1-3)</button>
-                <button class="option-chip" onclick="selectOption(this, 'chatbot')">Moderado (4-6)</button>
-                <button class="option-chip active-chip" onclick="selectOption(this, 'chatbot')">Intenso (7-9)</button>
-                <button class="option-chip" onclick="selectOption(this, 'chatbot')">Severo (10)</button>
-              </div>
-            </div>
-            <div class="msg-time">09:16</div>
-          </div>
-        </div>
-
-        <div class="msg user">
-          <div class="msg-avatar">👤</div>
-          <div>
-            <div class="msg-bubble">Intenso (7-9)</div>
-            <div class="msg-time">09:16</div>
-          </div>
-        </div>
-
-        <div class="msg bot">
-          <div class="msg-avatar">🤖</div>
-          <div>
-            <div class="msg-bubble">
-              ⚠️ Basándome en tus síntomas, he determinado tu nivel de urgencia:
-              <div class="urgency-result">
-                <div class="urg-title">RESULTADO DEL TRIAJE</div>
-                <div class="urg-level">🟡 URGENTE</div>
-                <div class="urg-desc">Dolor de pecho intenso con dificultad respiratoria requiere atención médica en los próximos 30 minutos. Tu turno ha sido asignado con alta prioridad.</div>
-              </div>
-            </div>
-            <div class="msg-time">09:16</div>
-          </div>
-        </div>
-      </div>
-
+      <div class="chat-messages" id="chat-messages"></div>
       <div class="chat-input-wrap">
         <input class="chat-input" placeholder="Escribe tu respuesta o síntoma...">
         <button class="send-btn">➤</button>
@@ -1264,12 +1193,99 @@
         </div>
       </div>
 
-      <!-- ── SECCIÓN: REPORTES (📊) ── -->
-      <div class="panel-body" id="med-section-reportes" style="display:none;">
-        <div class="section-header" style="margin-bottom:20px;">
-          <div class="section-title">Reportes de atención — Dr. García</div>
-          <button class="btn-sm primary">📥 Exportar PDF</button>
-        </div>
+<!-- ── SECCIÓN: REPORTES (📊) ── -->
+<div class="panel-body" id="med-section-reportes" style="display:none;">
+
+  <!-- Topbar controles -->
+  <div class="section-header" style="margin-bottom:20px;">
+    <div class="section-title">Reportes de atención — Dr. García</div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <!-- Tipo de reporte -->
+      <div style="display:flex;background:var(--surface);border-radius:8px;padding:3px;gap:2px;">
+        <div class="rep-tab active" id="rep-tab-diario"   onclick="switchRepTab('diario')"  style="padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;transition:all 0.15s;">Diario</div>
+        <div class="rep-tab"        id="rep-tab-semanal"  onclick="switchRepTab('semanal')" style="padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;color:var(--text2);transition:all 0.15s;">Semanal</div>
+        <div class="rep-tab"        id="rep-tab-mensual"  onclick="switchRepTab('mensual')" style="padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;color:var(--text2);transition:all 0.15s;">Mensual</div>
+      </div>
+      <!-- Rango de fechas -->
+      <input type="date" id="rep-fecha-desde" style="border:1.5px solid var(--border);border-radius:8px;padding:6px 10px;font-size:12px;font-family:'DM Sans',sans-serif;color:var(--text);outline:none;" value="2026-03-01">
+      <span style="font-size:12px;color:var(--text3);">→</span>
+      <input type="date" id="rep-fecha-hasta" style="border:1.5px solid var(--border);border-radius:8px;padding:6px 10px;font-size:12px;font-family:'DM Sans',sans-serif;color:var(--text);outline:none;" value="2026-03-06">
+      <button class="btn-sm" onclick="aplicarFiltroRep()" style="gap:4px;">🔍 Filtrar</button>
+    </div>
+  </div>
+
+  <!-- Aviso de filtro aplicado -->
+  <div id="rep-filtro-badge" style="display:none;background:var(--surface2);border:1px solid var(--blue-light);border-radius:8px;padding:8px 14px;margin-bottom:16px;font-size:12px;color:var(--blue);display:none;align-items:center;gap:8px;">
+    <span>🔍</span>
+    <span id="rep-filtro-texto"></span>
+    <span onclick="limpiarFiltroRep()" style="margin-left:auto;cursor:pointer;color:var(--text3);font-weight:700;">✕ Limpiar</span>
+  </div>
+
+  <!-- KPI resumen -->
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px;" id="rep-kpis">
+    <div style="background:white;border-radius:var(--radius-lg);border:1px solid var(--border);padding:16px 18px;text-align:center;">
+      <div id="rep-kpi-atenciones" style="font-size:28px;font-weight:700;color:var(--blue);">147</div>
+      <div style="font-size:11px;color:var(--text3);margin-top:3px;font-weight:600;text-transform:uppercase;">Atenciones</div>
+    </div>
+    <div style="background:white;border-radius:var(--radius-lg);border:1px solid var(--border);padding:16px 18px;text-align:center;">
+      <div id="rep-kpi-tiempo" style="font-size:28px;font-weight:700;color:var(--teal);">18<span style="font-size:14px;">min</span></div>
+      <div style="font-size:11px;color:var(--text3);margin-top:3px;font-weight:600;text-transform:uppercase;">Tiempo prom.</div>
+    </div>
+    <div style="background:white;border-radius:var(--radius-lg);border:1px solid var(--border);padding:16px 18px;text-align:center;">
+      <div id="rep-kpi-satisfaccion" style="font-size:28px;font-weight:700;color:var(--success);">94<span style="font-size:14px;">%</span></div>
+      <div style="font-size:11px;color:var(--text3);margin-top:3px;font-weight:600;text-transform:uppercase;">Satisfacción</div>
+    </div>
+    <div style="background:white;border-radius:var(--radius-lg);border:1px solid var(--border);padding:16px 18px;text-align:center;">
+      <div id="rep-kpi-criticos" style="font-size:28px;font-weight:700;color:var(--danger);">12</div>
+      <div style="font-size:11px;color:var(--text3);margin-top:3px;font-weight:600;text-transform:uppercase;">Casos críticos</div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1.4fr 1fr;gap:18px;">
+    <!-- Gráfica -->
+    <div class="card">
+      <div class="card-title" id="rep-chart-title">Atenciones por día (últimas 2 semanas)</div>
+      <div style="display:flex;align-items:flex-end;gap:8px;height:130px;padding-top:8px;" id="rep-chart-bars">
+        <!-- barras inyectadas por JS -->
+      </div>
+    </div>
+
+    <!-- Diagnósticos -->
+    <div class="card">
+      <div class="card-title">Diagnósticos más frecuentes</div>
+      <div style="display:flex;flex-direction:column;gap:10px;" id="rep-diagnosticos">
+        <!-- inyectado por JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal detalle diagnóstico -->
+  <div id="rep-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.35);z-index:300;align-items:center;justify-content:center;">
+    <div style="background:white;border-radius:var(--radius-lg);padding:28px 32px;max-width:420px;width:90%;box-shadow:var(--shadow-lg);">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+        <div style="font-size:16px;font-weight:700;color:var(--text);" id="rep-modal-title">Detalle</div>
+        <div onclick="document.getElementById('rep-modal').style.display='none'" style="cursor:pointer;color:var(--text3);font-size:18px;font-weight:700;">✕</div>
+      </div>
+      <div id="rep-modal-body"></div>
+    </div>
+  </div>
+
+  <!-- Modal exportar PDF -->
+  <div id="rep-pdf-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.35);z-index:300;align-items:center;justify-content:center;">
+    <div style="background:white;border-radius:var(--radius-lg);padding:32px 36px;max-width:360px;width:90%;text-align:center;box-shadow:var(--shadow-lg);">
+      <div id="rep-pdf-icon" style="font-size:44px;margin-bottom:12px;">📄</div>
+      <div id="rep-pdf-title" style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:6px;">Generando reporte PDF...</div>
+      <div id="rep-pdf-sub" style="font-size:12px;color:var(--text2);margin-bottom:18px;">Compilando datos del Dr. García</div>
+      <div style="height:6px;background:var(--surface);border-radius:10px;overflow:hidden;margin-bottom:20px;">
+        <div id="rep-pdf-fill" style="height:100%;width:0%;background:linear-gradient(90deg,var(--blue),var(--teal-light));border-radius:10px;transition:width 0.8s ease;"></div>
+      </div>
+      <div id="rep-pdf-steps" style="font-size:11px;color:var(--text3);margin-bottom:16px;min-height:16px;"></div>
+      <button id="rep-pdf-btn" onclick="document.getElementById('rep-pdf-modal').style.display='none'" style="display:none;" class="btn-primary">✓ Cerrar</button>
+    </div>
+  </div>
+
+</div>
+ <!------------------------------------------->
 
         <!-- KPI resumen -->
         <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px;">
@@ -1419,7 +1435,6 @@
       </div>
 
     </div><!-- end panel-content -->
-  </div><!-- end panel-layout -->
 
   <!-- Notification toast -->
   <div class="notif-toast" id="notifToast">
@@ -1440,18 +1455,18 @@
     <div class="admin-sidebar">
       <div class="sidebar-section-label">General</div>
       <div class="sidebar-link active" onclick="switchAdminSection('dashboard', this)"><span class="icon">📊</span> Dashboard</div>
-      <div class="sidebar-link" onclick="switchAdminSection('dashboard', this)"><span class="icon">📋</span> Reportes <span class="badge-count">3</span></div>
+	<div class="sidebar-link" onclick="switchAdminSection('reportes', this)"><span class="icon">📋</span> Reportes <span class="badge-count">3</span></div>
 
-      <div class="sidebar-section-label">Gestión</div>
-      <div class="sidebar-link" onclick="switchAdminSection('dashboard', this)"><span class="icon">🏥</span> Especialidades</div>
-      <div class="sidebar-link" onclick="switchAdminSection('dashboard', this)"><span class="icon">👨‍⚕️</span> Médicos</div>
-      <div class="sidebar-link" onclick="switchAdminSection('dashboard', this)"><span class="icon">📅</span> Horarios</div>
-      <div class="sidebar-link" onclick="switchAdminSection('dashboard', this)"><span class="icon">👥</span> Usuarios</div>
+		  <div class="sidebar-section-label">Gestión</div>
+		  <div class="sidebar-link" onclick="switchAdminSection('especialidades', this)"><span class="icon">🏥</span> Especialidades</div>
+		  <div class="sidebar-link" onclick="switchAdminSection('medicos', this)"><span class="icon">👨‍⚕️</span> Médicos</div>
+		  <div class="sidebar-link" onclick="switchAdminSection('horarios', this)"><span class="icon">📅</span> Horarios</div>
+		  <div class="sidebar-link" onclick="switchAdminSection('usuarios', this)"><span class="icon">👥</span> Usuarios</div>
 
-      <div class="sidebar-section-label">Sistema</div>
-      <div class="sidebar-link" id="notif-link" onclick="switchAdminSection('notificaciones', this)"><span class="icon">🔔</span> Notificaciones <span class="badge-count">7</span></div>
-      <div class="sidebar-link" onclick="switchAdminSection('dashboard', this)"><span class="icon">⚙️</span> Configuración</div>
-      <div class="sidebar-link" onclick="switchAdminSection('dashboard', this)"><span class="icon">📜</span> Auditoría</div>
+		  <div class="sidebar-section-label">Sistema</div>
+		  <div class="sidebar-link" id="notif-link" onclick="switchAdminSection('notificaciones', this)"><span class="icon">🔔</span> Notificaciones <span class="badge-count">7</span></div>
+		  <div class="sidebar-link" onclick="switchAdminSection('configuracion', this)"><span class="icon">⚙️</span> Configuración</div>
+		  <div class="sidebar-link" onclick="switchAdminSection('auditoria', this)"><span class="icon">📜</span> Auditoría</div>
 
       <div style="margin-top:auto;padding:12px;background:rgba(255,255,255,0.06);border-radius:var(--radius);display:flex;align-items:center;gap:10px;">
         <div style="width:34px;height:34px;border-radius:50%;background:var(--teal);display:flex;align-items:center;justify-content:center;color:white;font-size:13px;font-weight:700;">AD</div>
@@ -1467,7 +1482,6 @@
         <div class="breadcrumb">Panel Admin / <span id="admin-breadcrumb">Dashboard</span></div>
         <div style="margin-left:auto;display:flex;gap:10px;align-items:center;">
           <span style="font-size:12px;color:var(--text3);">Hoy, 05 Mar 2026</span>
-          <button class="btn-sm primary" id="admin-topbar-btn">📥 Exportar reporte</button>
         </div>
       </div>
 
@@ -1874,9 +1888,526 @@
         </div>
 
       </div><!-- end notificaciones -->
+	  
+	  	<!-- REPORTES ADMIN SECTION -->
+	<div class="admin-body" id="admin-section-reportes" style="display:none;">
 
-    </div><!-- end admin-main -->
-  </div><!-- end admin-layout -->
+	  <!-- Topbar controles -->
+	  <div class="section-header" style="margin-bottom:20px;">
+		<div class="section-title">Reportes del sistema</div>
+		<div style="display:flex;gap:8px;align-items:center;">
+		  <!-- Tipo -->
+		  <div style="display:flex;background:var(--surface);border-radius:8px;padding:3px;gap:2px;">
+			<div id="adm-tab-diario"  onclick="switchAdmRepTab('diario')"  style="padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;color:var(--text2);transition:all 0.15s;">Diario</div>
+			<div id="adm-tab-semanal" onclick="switchAdmRepTab('semanal')" style="padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;color:var(--text2);transition:all 0.15s;">Semanal</div>
+			<div id="adm-tab-mensual" onclick="switchAdmRepTab('mensual')" style="padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;background:white;color:var(--blue);box-shadow:0 2px 8px rgba(0,0,0,0.08);transition:all 0.15s;">Mensual</div>
+		  </div>
+		  <!-- Fechas -->
+		  <input type="date" id="adm-fecha-desde" style="border:1.5px solid var(--border);border-radius:8px;padding:6px 10px;font-size:12px;font-family:'DM Sans',sans-serif;color:var(--text);outline:none;" value="2026-03-01">
+		  <span style="font-size:12px;color:var(--text3);">→</span>
+		  <input type="date" id="adm-fecha-hasta" style="border:1.5px solid var(--border);border-radius:8px;padding:6px 10px;font-size:12px;font-family:'DM Sans',sans-serif;color:var(--text);outline:none;" value="2026-03-06">
+		  <button class="btn-sm" onclick="aplicarFiltroAdmRep()">🔍 Filtrar</button>
+		  <button class="btn-sm primary" onclick="simularExportAdmPDF()">📥 Exportar PDF</button>
+		</div>
+	  </div>
+
+	  <!-- Badge filtro -->
+	  <div id="adm-filtro-badge" style="display:none;background:var(--surface2);border:1px solid var(--blue-light);border-radius:8px;padding:8px 14px;margin-bottom:16px;font-size:12px;color:var(--blue);align-items:center;gap:8px;">
+		<span>🔍</span>
+		<span id="adm-filtro-texto"></span>
+		<span onclick="limpiarFiltroAdmRep()" style="margin-left:auto;cursor:pointer;color:var(--text3);font-weight:700;">✕ Limpiar</span>
+	  </div>
+
+	  <!-- KPIs -->
+	  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px;">
+		<div style="background:white;border-radius:var(--radius-lg);border:1px solid var(--border);padding:16px 18px;text-align:center;">
+		  <div id="adm-kpi-pacientes" style="font-size:28px;font-weight:700;color:var(--blue);">1,240</div>
+		  <div style="font-size:11px;color:var(--text3);margin-top:3px;font-weight:600;text-transform:uppercase;">Total pacientes</div>
+		</div>
+		<div style="background:white;border-radius:var(--radius-lg);border:1px solid var(--border);padding:16px 18px;text-align:center;">
+		  <div id="adm-kpi-triajes" style="font-size:28px;font-weight:700;color:var(--teal);">1,108</div>
+		  <div style="font-size:11px;color:var(--text3);margin-top:3px;font-weight:600;text-transform:uppercase;">Triajes completados</div>
+		</div>
+		<div style="background:white;border-radius:var(--radius-lg);border:1px solid var(--border);padding:16px 18px;text-align:center;">
+		  <div id="adm-kpi-espera" style="font-size:28px;font-weight:700;color:var(--warning);">21<span style="font-size:14px;">min</span></div>
+		  <div style="font-size:11px;color:var(--text3);margin-top:3px;font-weight:600;text-transform:uppercase;">Espera promedio</div>
+		</div>
+		<div style="background:white;border-radius:var(--radius-lg);border:1px solid var(--border);padding:16px 18px;text-align:center;">
+		  <div id="adm-kpi-notif" style="font-size:28px;font-weight:700;color:var(--success);">3,892</div>
+		  <div style="font-size:11px;color:var(--text3);margin-top:3px;font-weight:600;text-transform:uppercase;">Notificaciones enviadas</div>
+		</div>
+	  </div>
+
+	  <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px;">
+
+		<!-- Gráfica atenciones -->
+		<div class="card">
+		  <div class="card-title" id="adm-chart-title">Atenciones totales por día (mes actual)</div>
+		  <div style="display:flex;align-items:flex-end;gap:6px;height:130px;padding-top:8px;" id="adm-chart-bars"></div>
+		</div>
+
+		<!-- Distribución urgencias -->
+		<div class="card">
+		  <div class="card-title">Distribución por nivel de urgencia</div>
+		  <div style="display:flex;align-items:center;gap:20px;">
+			<svg width="110" height="110" viewBox="0 0 110 110" style="flex-shrink:0;">
+			  <circle cx="55" cy="55" r="40" fill="none" stroke="#EEF4FF" stroke-width="18"/>
+			  <circle cx="55" cy="55" r="40" fill="none" stroke="#10B981" stroke-width="18" stroke-dasharray="118 251" stroke-dashoffset="0" transform="rotate(-90 55 55)"/>
+			  <circle cx="55" cy="55" r="40" fill="none" stroke="#3B82F6" stroke-width="18" stroke-dasharray="75 251" stroke-dashoffset="-118" transform="rotate(-90 55 55)"/>
+			  <circle cx="55" cy="55" r="40" fill="none" stroke="#F59E0B" stroke-width="18" stroke-dasharray="43 251" stroke-dashoffset="-193" transform="rotate(-90 55 55)"/>
+			  <circle cx="55" cy="55" r="40" fill="none" stroke="#EF4444" stroke-width="18" stroke-dasharray="15 251" stroke-dashoffset="-236" transform="rotate(-90 55 55)"/>
+			  <text x="55" y="50" text-anchor="middle" font-size="13" font-weight="700" fill="#0F172A" id="adm-donut-val">1,240</text>
+			  <text x="55" y="64" text-anchor="middle" font-size="9" fill="#94A3B8">total</text>
+			</svg>
+			<div style="display:flex;flex-direction:column;gap:8px;flex:1;">
+			  <div onclick="verDetalleUrgAdmin('emergente')" style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:5px 8px;border-radius:8px;transition:background 0.15s;" onmouseover="this.style.background='var(--surface)'" onmouseout="this.style.background='transparent'">
+				<div style="width:10px;height:10px;border-radius:50%;background:#EF4444;flex-shrink:0;"></div>
+				<span style="font-size:12px;color:var(--text2);flex:1;">Emergente</span>
+				<span style="font-weight:700;color:var(--text);font-size:12px;">74 <span style="color:var(--text3);font-weight:400;">→</span></span>
+			  </div>
+			  <div onclick="verDetalleUrgAdmin('urgente')" style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:5px 8px;border-radius:8px;transition:background 0.15s;" onmouseover="this.style.background='var(--surface)'" onmouseout="this.style.background='transparent'">
+				<div style="width:10px;height:10px;border-radius:50%;background:#F59E0B;flex-shrink:0;"></div>
+				<span style="font-size:12px;color:var(--text2);flex:1;">Urgente</span>
+				<span style="font-weight:700;color:var(--text);font-size:12px;">211 <span style="color:var(--text3);font-weight:400;">→</span></span>
+			  </div>
+			  <div onclick="verDetalleUrgAdmin('prioritario')" style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:5px 8px;border-radius:8px;transition:background 0.15s;" onmouseover="this.style.background='var(--surface)'" onmouseout="this.style.background='transparent'">
+				<div style="width:10px;height:10px;border-radius:50%;background:#3B82F6;flex-shrink:0;"></div>
+				<span style="font-size:12px;color:var(--text2);flex:1;">Prioritario</span>
+				<span style="font-weight:700;color:var(--text);font-size:12px;">372 <span style="color:var(--text3);font-weight:400;">→</span></span>
+			  </div>
+			  <div onclick="verDetalleUrgAdmin('no-urgente')" style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:5px 8px;border-radius:8px;transition:background 0.15s;" onmouseover="this.style.background='var(--surface)'" onmouseout="this.style.background='transparent'">
+				<div style="width:10px;height:10px;border-radius:50%;background:#10B981;flex-shrink:0;"></div>
+				<span style="font-size:12px;color:var(--text2);flex:1;">No urgente</span>
+				<span style="font-weight:700;color:var(--text);font-size:12px;">583 <span style="color:var(--text3);font-weight:400;">→</span></span>
+			  </div>
+			</div>
+		  </div>
+		</div>
+	  </div>
+
+	  <!-- Rendimiento por médico -->
+	  <div class="card" style="margin-bottom:18px;">
+		<div class="card-title">
+		  Rendimiento por médico — Este mes
+		  <span class="card-title-action">Ver todos →</span>
+		</div>
+		<div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr;gap:0;">
+		  <div style="display:contents;">
+			<div style="padding:10px 14px;background:var(--surface);font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid var(--border);">Médico</div>
+			<div style="padding:10px 14px;background:var(--surface);font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid var(--border);">Atenciones</div>
+			<div style="padding:10px 14px;background:var(--surface);font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid var(--border);">T. promedio</div>
+			<div style="padding:10px 14px;background:var(--surface);font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid var(--border);">Satisfacción</div>
+			<div style="padding:10px 14px;background:var(--surface);font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid var(--border);">Estado</div>
+		  </div>
+		  <div id="adm-medicos-table"></div>
+		</div>
+	  </div>
+
+	  <!-- Modal detalle urgencia -->
+	  <div id="adm-urg-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.35);z-index:300;align-items:center;justify-content:center;">
+		<div style="background:white;border-radius:var(--radius-lg);padding:28px 32px;max-width:400px;width:90%;box-shadow:var(--shadow-lg);">
+		  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+			<div style="font-size:16px;font-weight:700;color:var(--text);" id="adm-urg-modal-title">Detalle</div>
+			<div onclick="document.getElementById('adm-urg-modal').style.display='none'" style="cursor:pointer;color:var(--text3);font-size:18px;font-weight:700;">✕</div>
+		  </div>
+		  <div id="adm-urg-modal-body"></div>
+		</div>
+	  </div>
+
+	  <!-- Modal exportar PDF admin -->
+	  <div id="adm-pdf-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.35);z-index:300;align-items:center;justify-content:center;">
+		<div style="background:white;border-radius:var(--radius-lg);padding:32px 36px;max-width:360px;width:90%;text-align:center;box-shadow:var(--shadow-lg);">
+		  <div id="adm-pdf-icon" style="font-size:44px;margin-bottom:12px;">📄</div>
+		  <div id="adm-pdf-title" style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:6px;">Generando reporte PDF...</div>
+		  <div id="adm-pdf-sub" style="font-size:12px;color:var(--text2);margin-bottom:18px;">Compilando datos del sistema</div>
+		  <div style="height:6px;background:var(--surface);border-radius:10px;overflow:hidden;margin-bottom:20px;">
+			<div id="adm-pdf-fill" style="height:100%;width:0%;background:linear-gradient(90deg,var(--blue),var(--teal-light));border-radius:10px;transition:width 0.8s ease;"></div>
+		  </div>
+		  <div id="adm-pdf-steps" style="font-size:11px;color:var(--text3);margin-bottom:16px;min-height:16px;"></div>
+		  <button id="adm-pdf-btn" onclick="document.getElementById('adm-pdf-modal').style.display='none'" style="display:none;" class="btn-primary">✓ Cerrar</button>
+		</div>
+	  </div>
+	  </div><!-- end admin-section-reportes -->
+	  <!-- ── MÉDICOS ── -->
+	<div class="admin-body" id="admin-section-medicos" style="display:none;">
+
+	  <div class="section-header" style="margin-bottom:20px;">
+		<div class="section-title">Gestión de médicos</div>
+		<button class="btn-sm primary" onclick="abrirModalMedico(-1)">+ Agregar médico</button>
+	  </div>
+
+	  <!-- KPIs -->
+	  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px;">
+		<div style="background:white;border-radius:var(--radius-lg);border:1px solid var(--border);padding:16px 18px;text-align:center;">
+		  <div style="font-size:28px;font-weight:700;color:var(--blue);">12</div>
+		  <div style="font-size:11px;color:var(--text3);margin-top:3px;font-weight:600;text-transform:uppercase;">Total médicos</div>
+		</div>
+		<div style="background:white;border-radius:var(--radius-lg);border:1px solid var(--border);padding:16px 18px;text-align:center;">
+		  <div style="font-size:28px;font-weight:700;color:var(--success);">8</div>
+		  <div style="font-size:11px;color:var(--text3);margin-top:3px;font-weight:600;text-transform:uppercase;">En turno ahora</div>
+		</div>
+		<div style="background:white;border-radius:var(--radius-lg);border:1px solid var(--border);padding:16px 18px;text-align:center;">
+		  <div style="font-size:28px;font-weight:700;color:var(--teal);">6</div>
+		  <div style="font-size:11px;color:var(--text3);margin-top:3px;font-weight:600;text-transform:uppercase;">Especialidades</div>
+		</div>
+		<div style="background:white;border-radius:var(--radius-lg);border:1px solid var(--border);padding:16px 18px;text-align:center;">
+		  <div style="font-size:28px;font-weight:700;color:var(--warning);">93<span style="font-size:14px;">%</span></div>
+		  <div style="font-size:11px;color:var(--text3);margin-top:3px;font-weight:600;text-transform:uppercase;">Satisfacción prom.</div>
+		</div>
+	  </div>
+
+	  <!-- Cards de médicos -->
+	  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;" id="medicos-grid"></div>
+
+	  <!-- Modal médico -->
+	  <div id="modal-medico" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.35);z-index:300;align-items:center;justify-content:center;">
+		<div style="background:white;border-radius:var(--radius-lg);padding:28px 32px;max-width:460px;width:90%;box-shadow:var(--shadow-lg);max-height:90vh;overflow-y:auto;">
+		  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+			<div style="font-size:16px;font-weight:700;color:var(--text);" id="modal-medico-title">Agregar médico</div>
+			<div onclick="document.getElementById('modal-medico').style.display='none'" style="cursor:pointer;color:var(--text3);font-size:18px;font-weight:700;">✕</div>
+		  </div>
+		  <div style="display:flex;flex-direction:column;gap:14px;">
+			<div><label style="font-size:12px;font-weight:700;color:var(--text);display:block;margin-bottom:6px;">Nombre completo</label>
+			  <input id="med-form-nombre" style="width:100%;border:1.5px solid var(--border);border-radius:10px;padding:10px 12px;font-size:13px;font-family:'DM Sans',sans-serif;outline:none;" placeholder="Dr. Nombre Apellido"></div>
+			<div><label style="font-size:12px;font-weight:700;color:var(--text);display:block;margin-bottom:6px;">Especialidad</label>
+			  <select id="med-form-esp" style="width:100%;border:1.5px solid var(--border);border-radius:10px;padding:10px 12px;font-size:13px;font-family:'DM Sans',sans-serif;outline:none;background:white;">
+				<option>Urgencias</option><option>Cardiología</option><option>Neumología</option>
+				<option>Neurología</option><option>Traumatología</option><option>Medicina General</option>
+			  </select></div>
+			<div><label style="font-size:12px;font-weight:700;color:var(--text);display:block;margin-bottom:6px;">Correo institucional</label>
+			  <input id="med-form-email" style="width:100%;border:1.5px solid var(--border);border-radius:10px;padding:10px 12px;font-size:13px;font-family:'DM Sans',sans-serif;outline:none;" placeholder="medico@hospital.com"></div>
+			<div><label style="font-size:12px;font-weight:700;color:var(--text);display:block;margin-bottom:6px;">Turno</label>
+			  <select id="med-form-turno" style="width:100%;border:1.5px solid var(--border);border-radius:10px;padding:10px 12px;font-size:13px;font-family:'DM Sans',sans-serif;outline:none;background:white;">
+				<option>Mañana 07:00–14:00</option><option>Tarde 14:00–21:00</option>
+				<option>Noche 21:00–07:00</option><option>24/7</option>
+			  </select></div>
+			<div style="display:flex;gap:10px;margin-top:6px;">
+			  <button onclick="document.getElementById('modal-medico').style.display='none'" class="btn-sm" style="flex:1;justify-content:center;">Cancelar</button>
+			  <button onclick="guardarMedico()" class="btn-primary" style="flex:2;padding:10px;">💾 Guardar médico</button>
+			</div>
+		  </div>
+		</div>
+	  </div>
+	</div>
+
+	<!-- ── HORARIOS ── -->
+	<div class="admin-body" id="admin-section-horarios" style="display:none;">
+	  <div class="section-header" style="margin-bottom:20px;">
+		<div class="section-title">Horarios por médico</div>
+		<div style="display:flex;gap:8px;">
+		  <select id="horario-filtro-esp" onchange="renderHorarios()" style="border:1.5px solid var(--border);border-radius:8px;padding:7px 12px;font-size:13px;font-family:'DM Sans',sans-serif;outline:none;background:white;">
+			<option value="">Todas las especialidades</option>
+			<option>Urgencias</option><option>Cardiología</option><option>Neumología</option>
+			<option>Neurología</option><option>Traumatología</option>
+		  </select>
+		  <button class="btn-sm primary">+ Asignar turno</button>
+		</div>
+	  </div>
+
+	  <!-- Calendario semanal header -->
+	  <div class="card" style="margin-bottom:18px;">
+		<div style="display:grid;grid-template-columns:180px repeat(5,1fr);gap:0;">
+		  <div style="padding:10px 14px;background:var(--surface);font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;border-bottom:1px solid var(--border);">Médico</div>
+		  <div style="padding:10px 14px;background:var(--surface);font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;border-bottom:1px solid var(--border);text-align:center;">Lun 03</div>
+		  <div style="padding:10px 14px;background:var(--surface);font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;border-bottom:1px solid var(--border);text-align:center;">Mar 04</div>
+		  <div style="padding:10px 14px;background:var(--surface);font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;border-bottom:1px solid var(--border);text-align:center;">Mié 05</div>
+		  <div style="padding:10px 14px;background:var(--surface);font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;border-bottom:1px solid var(--border);text-align:center;">Jue 06</div>
+		  <div style="padding:10px 14px;background:var(--surface);font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;border-bottom:1px solid var(--border);text-align:center;font-weight:800;">Hoy 06</div>
+		</div>
+		<div id="horarios-tabla"></div>
+	  </div>
+
+	  <!-- Leyenda turnos -->
+	  <div style="display:flex;gap:12px;flex-wrap:wrap;">
+		<div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2);">
+		  <div style="width:14px;height:14px;background:#DBEAFE;border-radius:4px;border:1px solid #3B82F6;"></div> Mañana
+		</div>
+		<div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2);">
+		  <div style="width:14px;height:14px;background:#D1FAE5;border-radius:4px;border:1px solid #10B981;"></div> Tarde
+		</div>
+		<div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2);">
+		  <div style="width:14px;height:14px;background:#EDE9FE;border-radius:4px;border:1px solid #7C3AED;"></div> Noche
+		</div>
+		<div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2);">
+		  <div style="width:14px;height:14px;background:#FEE2E2;border-radius:4px;border:1px solid #EF4444;"></div> Libre
+		</div>
+	  </div>
+	</div>
+
+	<!-- ── USUARIOS ── -->
+	<div class="admin-body" id="admin-section-usuarios" style="display:none;">
+	  <div class="section-header" style="margin-bottom:20px;">
+		<div class="section-title">Gestión de usuarios</div>
+		<button class="btn-sm primary">+ Nuevo usuario</button>
+	  </div>
+
+	  <!-- Filtros -->
+	  <div style="display:flex;gap:10px;margin-bottom:18px;align-items:center;">
+		<input id="usr-search" oninput="renderUsuarios()" placeholder="🔍  Buscar por nombre o email..." style="border:1.5px solid var(--border);border-radius:10px;padding:9px 14px;font-size:13px;font-family:'DM Sans',sans-serif;outline:none;width:260px;">
+		<div style="display:flex;gap:6px;">
+		  <div class="filter-chip active" onclick="setUsrFiltro('todos',this)">Todos</div>
+		  <div class="filter-chip" onclick="setUsrFiltro('medico',this)">👨‍⚕️ Médico</div>
+		  <div class="filter-chip" onclick="setUsrFiltro('paciente',this)">🧑 Paciente</div>
+		  <div class="filter-chip" onclick="setUsrFiltro('admin',this)">🛠️ Admin</div>
+		</div>
+	  </div>
+
+	  <!-- Tabla -->
+	  <div class="card" style="overflow:hidden;">
+		<div style="display:grid;grid-template-columns:2fr 1.2fr 1fr 1fr 1fr 90px;background:var(--surface);border-bottom:1px solid var(--border);">
+		  <div style="padding:10px 14px;font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;">Usuario</div>
+		  <div style="padding:10px 14px;font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;">Email</div>
+		  <div style="padding:10px 14px;font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;">Rol (Spatie)</div>
+		  <div style="padding:10px 14px;font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;">Registro</div>
+		  <div style="padding:10px 14px;font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;">Estado</div>
+		  <div style="padding:10px 14px;"></div>
+		</div>
+		<div id="usuarios-tabla"></div>
+	  </div>
+	</div>
+
+	<!-- ── AUDITORÍA ── -->
+	<div class="admin-body" id="admin-section-auditoria" style="display:none;">
+	  <div class="section-header" style="margin-bottom:20px;">
+		<div class="section-title">Log de auditoría del sistema</div>
+		<button class="btn-sm primary" onclick="simularExportLog()">📥 Exportar log</button>
+	  </div>
+
+	  <!-- Filtros -->
+	  <div style="display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap;align-items:center;">
+		<input type="date" id="aud-desde" style="border:1.5px solid var(--border);border-radius:8px;padding:7px 10px;font-size:12px;font-family:'DM Sans',sans-serif;outline:none;" value="2026-03-06">
+		<span style="font-size:12px;color:var(--text3);">→</span>
+		<input type="date" id="aud-hasta" style="border:1.5px solid var(--border);border-radius:8px;padding:7px 10px;font-size:12px;font-family:'DM Sans',sans-serif;outline:none;" value="2026-03-06">
+		<select id="aud-usuario" onchange="renderAuditoria()" style="border:1.5px solid var(--border);border-radius:8px;padding:7px 12px;font-size:13px;font-family:'DM Sans',sans-serif;outline:none;background:white;">
+		  <option value="">Todos los usuarios</option>
+		  <option>Admin</option><option>Dr. García</option><option>Dra. López</option><option>TriajeBot</option><option>n8n</option>
+		</select>
+		<button class="btn-sm" onclick="renderAuditoria()">🔍 Filtrar</button>
+		<div style="display:flex;gap:6px;margin-left:auto;">
+		  <div class="filter-chip active" onclick="setAudFiltro('todos',this)">Todos</div>
+		  <div class="filter-chip" onclick="setAudFiltro('info',this)" style="border-color:#3B82F6;color:#3B82F6;">ℹ️ Info</div>
+		  <div class="filter-chip" onclick="setAudFiltro('warning',this)" style="border-color:#F59E0B;color:#D97706;">⚠️ Warning</div>
+		  <div class="filter-chip" onclick="setAudFiltro('error',this)" style="border-color:#EF4444;color:#DC2626;">🔴 Error</div>
+		</div>
+	  </div>
+
+	  <!-- Log tabla -->
+	  <div class="card" style="overflow:hidden;">
+		<div style="display:grid;grid-template-columns:80px 120px 1.5fr 2fr 100px;background:var(--surface);border-bottom:1px solid var(--border);">
+		  <div style="padding:10px 14px;font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;">Nivel</div>
+		  <div style="padding:10px 14px;font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;">Hora</div>
+		  <div style="padding:10px 14px;font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;">Usuario</div>
+		  <div style="padding:10px 14px;font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;">Acción</div>
+		  <div style="padding:10px 14px;font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;">Módulo</div>
+		</div>
+		<div id="auditoria-tabla"></div>
+	  </div>
+
+	  <!-- Modal exportar log -->
+	  <div id="log-pdf-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.35);z-index:300;align-items:center;justify-content:center;">
+		<div style="background:white;border-radius:var(--radius-lg);padding:32px 36px;max-width:360px;width:90%;text-align:center;box-shadow:var(--shadow-lg);">
+		  <div id="log-pdf-icon" style="font-size:44px;margin-bottom:12px;">📄</div>
+		  <div id="log-pdf-title" style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:6px;">Exportando log...</div>
+		  <div id="log-pdf-sub" style="font-size:12px;color:var(--text2);margin-bottom:18px;">Preparando registros de auditoría</div>
+		  <div style="height:6px;background:var(--surface);border-radius:10px;overflow:hidden;margin-bottom:16px;">
+			<div id="log-pdf-fill" style="height:100%;width:0%;background:linear-gradient(90deg,var(--blue),var(--teal-light));border-radius:10px;transition:width 0.8s ease;"></div>
+		  </div>
+		  <div id="log-pdf-steps" style="font-size:11px;color:var(--text3);margin-bottom:16px;min-height:16px;"></div>
+		  <button id="log-pdf-btn" onclick="document.getElementById('log-pdf-modal').style.display='none'" style="display:none;" class="btn-primary">✓ Cerrar</button>
+		</div>
+	  </div>
+	</div><!-- end admin-section-auditoria -->
+
+	<!-- ── ESPECIALIDADES ── -->
+<div class="admin-body" id="admin-section-especialidades" style="display:none;">
+
+  <div class="section-header" style="margin-bottom:20px;">
+    <div class="section-title">Gestión de especialidades</div>
+    <button class="btn-sm primary" onclick="abrirModalEsp(-1)">+ Agregar especialidad</button>
+  </div>
+
+  <!-- KPIs -->
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px;">
+    <div style="background:white;border-radius:var(--radius-lg);border:1px solid var(--border);padding:16px 18px;text-align:center;">
+      <div style="font-size:28px;font-weight:700;color:var(--blue);">6</div>
+      <div style="font-size:11px;color:var(--text3);margin-top:3px;font-weight:600;text-transform:uppercase;">Especialidades</div>
+    </div>
+    <div style="background:white;border-radius:var(--radius-lg);border:1px solid var(--border);padding:16px 18px;text-align:center;">
+      <div style="font-size:28px;font-weight:700;color:var(--success);">5</div>
+      <div style="font-size:11px;color:var(--text3);margin-top:3px;font-weight:600;text-transform:uppercase;">Activas</div>
+    </div>
+    <div style="background:white;border-radius:var(--radius-lg);border:1px solid var(--border);padding:16px 18px;text-align:center;">
+      <div style="font-size:28px;font-weight:700;color:var(--teal);">12</div>
+      <div style="font-size:11px;color:var(--text3);margin-top:3px;font-weight:600;text-transform:uppercase;">Médicos asignados</div>
+    </div>
+    <div style="background:white;border-radius:var(--radius-lg);border:1px solid var(--border);padding:16px 18px;text-align:center;">
+      <div style="font-size:28px;font-weight:700;color:var(--warning);">1</div>
+      <div style="font-size:11px;color:var(--text3);margin-top:3px;font-weight:600;text-transform:uppercase;">Inactivas</div>
+    </div>
+  </div>
+
+  <!-- Grid especialidades -->
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;" id="esp-grid"></div>
+
+  <!-- Modal especialidad -->
+  <div id="modal-esp" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.35);z-index:300;align-items:center;justify-content:center;">
+    <div style="background:white;border-radius:var(--radius-lg);padding:28px 32px;max-width:440px;width:90%;box-shadow:var(--shadow-lg);">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+        <div style="font-size:16px;font-weight:700;color:var(--text);" id="modal-esp-title">Agregar especialidad</div>
+        <div onclick="document.getElementById('modal-esp').style.display='none'" style="cursor:pointer;color:var(--text3);font-size:18px;font-weight:700;">✕</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:14px;">
+        <div><label style="font-size:12px;font-weight:700;color:var(--text);display:block;margin-bottom:6px;">Nombre</label>
+          <input id="esp-form-nombre" style="width:100%;border:1.5px solid var(--border);border-radius:10px;padding:10px 12px;font-size:13px;font-family:'DM Sans',sans-serif;outline:none;" placeholder="ej. Pediatría"></div>
+        <div><label style="font-size:12px;font-weight:700;color:var(--text);display:block;margin-bottom:6px;">Icono (emoji)</label>
+          <input id="esp-form-icono" style="width:100%;border:1.5px solid var(--border);border-radius:10px;padding:10px 12px;font-size:18px;font-family:'DM Sans',sans-serif;outline:none;" placeholder="🏥" maxlength="2"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div><label style="font-size:12px;font-weight:700;color:var(--text);display:block;margin-bottom:6px;">Hora inicio</label>
+            <input id="esp-form-inicio" type="time" style="width:100%;border:1.5px solid var(--border);border-radius:10px;padding:10px 12px;font-size:13px;font-family:'DM Sans',sans-serif;outline:none;" value="08:00"></div>
+          <div><label style="font-size:12px;font-weight:700;color:var(--text);display:block;margin-bottom:6px;">Hora fin</label>
+            <input id="esp-form-fin" type="time" style="width:100%;border:1.5px solid var(--border);border-radius:10px;padding:10px 12px;font-size:13px;font-family:'DM Sans',sans-serif;outline:none;" value="18:00"></div>
+        </div>
+        <div><label style="font-size:12px;font-weight:700;color:var(--text);display:block;margin-bottom:6px;">Días de atención</label>
+          <select id="esp-form-dias" style="width:100%;border:1.5px solid var(--border);border-radius:10px;padding:10px 12px;font-size:13px;font-family:'DM Sans',sans-serif;outline:none;background:white;">
+            <option>Lun–Vie</option><option>Lun–Sáb</option><option>Lun–Dom</option><option>24/7</option>
+          </select></div>
+        <div style="display:flex;gap:10px;margin-top:4px;">
+          <button onclick="document.getElementById('modal-esp').style.display='none'" class="btn-sm" style="flex:1;justify-content:center;">Cancelar</button>
+          <button onclick="guardarEsp()" class="btn-primary" style="flex:2;padding:10px;">💾 Guardar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── CONFIGURACIÓN ── -->
+<div class="admin-body" id="admin-section-configuracion" style="display:none;">
+
+  <div class="section-header" style="margin-bottom:20px;">
+    <div class="section-title">Configuración del sistema</div>
+    <button class="btn-sm primary" onclick="simularGuardarConfig()">💾 Guardar cambios</button>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;">
+
+    <!-- Datos del hospital -->
+    <div class="card">
+      <div class="card-title">🏥 Datos del hospital</div>
+      <div style="display:flex;flex-direction:column;gap:14px;">
+        <div><label style="font-size:12px;font-weight:700;color:var(--text);display:block;margin-bottom:6px;">Nombre del centro</label>
+          <input style="width:100%;border:1.5px solid var(--border);border-radius:10px;padding:10px 12px;font-size:13px;font-family:'DM Sans',sans-serif;outline:none;" value="Hospital Regional de Urgencias"></div>
+        <div><label style="font-size:12px;font-weight:700;color:var(--text);display:block;margin-bottom:6px;">Dirección</label>
+          <input style="width:100%;border:1.5px solid var(--border);border-radius:10px;padding:10px 12px;font-size:13px;font-family:'DM Sans',sans-serif;outline:none;" value="Av. Principales #123, Santa Cruz, Bolivia"></div>
+        <div><label style="font-size:12px;font-weight:700;color:var(--text);display:block;margin-bottom:6px;">Teléfono de contacto</label>
+          <input style="width:100%;border:1.5px solid var(--border);border-radius:10px;padding:10px 12px;font-size:13px;font-family:'DM Sans',sans-serif;outline:none;" value="+591 3-000-0000"></div>
+        <div><label style="font-size:12px;font-weight:700;color:var(--text);display:block;margin-bottom:6px;">Email de contacto</label>
+          <input style="width:100%;border:1.5px solid var(--border);border-radius:10px;padding:10px 12px;font-size:13px;font-family:'DM Sans',sans-serif;outline:none;" value="contacto@hospital.com"></div>
+      </div>
+    </div>
+
+    <!-- Chatbot -->
+    <div class="card">
+      <div class="card-title">🤖 Parámetros del TriajeBot</div>
+      <div style="display:flex;flex-direction:column;gap:16px;">
+        <div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+            <label style="font-size:12px;font-weight:700;color:var(--text);">Umbral Emergente</label>
+            <span id="lbl-emergente" style="font-size:12px;font-weight:700;color:var(--danger);">≥ 9 / 10</span>
+          </div>
+          <input type="range" min="7" max="10" value="9" oninput="document.getElementById('lbl-emergente').textContent='≥ '+this.value+' / 10'" style="width:100%;accent-color:var(--danger);">
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+            <label style="font-size:12px;font-weight:700;color:var(--text);">Umbral Urgente</label>
+            <span id="lbl-urgente" style="font-size:12px;font-weight:700;color:var(--warning);">≥ 6 / 10</span>
+          </div>
+          <input type="range" min="4" max="8" value="6" oninput="document.getElementById('lbl-urgente').textContent='≥ '+this.value+' / 10'" style="width:100%;accent-color:var(--warning);">
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+            <label style="font-size:12px;font-weight:700;color:var(--text);">Umbral Prioritario</label>
+            <span id="lbl-prioritario" style="font-size:12px;font-weight:700;color:var(--blue);">≥ 3 / 10</span>
+          </div>
+          <input type="range" min="1" max="5" value="3" oninput="document.getElementById('lbl-prioritario').textContent='≥ '+this.value+' / 10'" style="width:100%;accent-color:var(--blue);">
+        </div>
+        <div style="background:var(--surface);border-radius:10px;padding:12px 14px;">
+          <div style="font-size:12px;color:var(--text3);">💡 Valores por debajo del umbral Prioritario se clasifican automáticamente como <strong>No Urgente</strong>.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- n8n / Webhooks -->
+    <div class="card">
+      <div class="card-title">⚡ Configuración n8n / Webhooks</div>
+      <div style="display:flex;flex-direction:column;gap:14px;">
+        <div><label style="font-size:12px;font-weight:700;color:var(--text);display:block;margin-bottom:6px;">URL del servidor n8n</label>
+          <input style="width:100%;border:1.5px solid var(--border);border-radius:10px;padding:10px 12px;font-size:13px;font-family:'DM Sans',sans-serif;outline:none;" value="http://localhost:5678"></div>
+        <div><label style="font-size:12px;font-weight:700;color:var(--text);display:block;margin-bottom:6px;">Webhook — Alerta Emergente</label>
+          <input style="width:100%;border:1.5px solid var(--border);border-radius:10px;padding:10px 12px;font-size:13px;font-family:'DM Sans',sans-serif;outline:none;" value="/webhook/alerta-emergente"></div>
+        <div><label style="font-size:12px;font-weight:700;color:var(--text);display:block;margin-bottom:6px;">Webhook — Aviso de Turno</label>
+          <input style="width:100%;border:1.5px solid var(--border);border-radius:10px;padding:10px 12px;font-size:13px;font-family:'DM Sans',sans-serif;outline:none;" value="/webhook/aviso-turno"></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;background:var(--surface);padding:12px 14px;border-radius:10px;">
+          <div>
+            <div style="font-size:13px;font-weight:600;color:var(--text);">Estado de conexión</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:2px;">Última verificación: hace 5 min</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span id="n8n-status-badge" style="background:#D1FAE5;color:#059669;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700;">● Conectado</span>
+            <button class="btn-sm" onclick="testN8n()" style="font-size:11px;">🔄 Probar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Seguridad -->
+    <div class="card">
+      <div class="card-title">🔒 Seguridad</div>
+      <div style="display:flex;flex-direction:column;gap:14px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:var(--surface);border-radius:10px;">
+          <div>
+            <div style="font-size:13px;font-weight:600;color:var(--text);">Autenticación 2FA</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:2px;">Requerir para cuentas de médico y admin</div>
+          </div>
+          <div id="toggle-2fa" onclick="toggleSwitch('toggle-2fa')" style="width:44px;height:24px;background:var(--blue);border-radius:20px;cursor:pointer;position:relative;transition:background 0.2s;">
+            <div style="position:absolute;top:3px;right:3px;width:18px;height:18px;background:white;border-radius:50%;transition:right 0.2s;"></div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:var(--surface);border-radius:10px;">
+          <div>
+            <div style="font-size:13px;font-weight:600;color:var(--text);">Cierre de sesión automático</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:2px;">Inactividad por más de</div>
+          </div>
+          <select style="border:1.5px solid var(--border);border-radius:8px;padding:6px 10px;font-size:12px;font-family:'DM Sans',sans-serif;outline:none;background:white;">
+            <option>15 minutos</option><option selected>30 minutos</option><option>1 hora</option>
+          </select>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:var(--surface);border-radius:10px;">
+          <div>
+            <div style="font-size:13px;font-weight:600;color:var(--text);">Registro de auditoría</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:2px;">Registrar todas las acciones del sistema</div>
+          </div>
+          <div id="toggle-audit" onclick="toggleSwitch('toggle-audit')" style="width:44px;height:24px;background:var(--blue);border-radius:20px;cursor:pointer;position:relative;transition:background 0.2s;">
+            <div style="position:absolute;top:3px;right:3px;width:18px;height:18px;background:white;border-radius:50%;transition:right 0.2s;"></div>
+          </div>
+        </div>
+        <div>
+          <label style="font-size:12px;font-weight:700;color:var(--text);display:block;margin-bottom:6px;">Nueva contraseña admin</label>
+          <input type="password" placeholder="••••••••••••" style="width:100%;border:1.5px solid var(--border);border-radius:10px;padding:10px 12px;font-size:13px;font-family:'DM Sans',sans-serif;outline:none;">
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Toast guardado -->
+  <div id="config-toast" style="display:none;position:fixed;bottom:28px;right:28px;background:#0F172A;color:white;padding:14px 20px;border-radius:12px;font-size:13px;font-weight:600;z-index:400;box-shadow:0 8px 30px rgba(0,0,0,0.2);display:none;align-items:center;gap:10px;">
+    ✅ Configuración guardada correctamente
+  </div>
+</div>
+	  
+	</div>
+	</div><!-- end admin-main -->
+	</div><!-- end admin-layout -->
 </div><!-- end screen-admin -->
 
 <!-- Send simulation modal -->
@@ -1937,26 +2468,175 @@
     document.getElementById('med-title').textContent = medTitles[section] || 'Panel Médico';
     document.getElementById('med-topbtn').textContent = medBtns[section] || '+ Nuevo Turno';
   }
+  
+  
+  // ── CHATBOT CONVERSATIONS ──
+  const chatData = {
+    MR: {
+      nombre: 'María Rodríguez', turno: '#A-047', progreso: '60%',
+      status: 'En línea · Evaluando síntomas',
+      msgs: [
+        { tipo: 'bot', texto: '¡Hola! Soy TriajeBot. Te ayudaré a evaluar tus síntomas. ¿Cuál es tu nombre completo?', hora: '09:14' },
+        { tipo: 'user', texto: 'María Rodríguez', hora: '09:14' },
+        { tipo: 'bot', texto: 'Hola María. ¿Cuántos años tienes?', hora: '09:14' },
+        { tipo: 'user', texto: '32 años', hora: '09:15' },
+        { tipo: 'bot', texto: 'Gracias. ¿Cuál es tu síntoma principal hoy?', hora: '09:15' },
+        { tipo: 'user', texto: 'Tengo dolor de pecho y dificultad para respirar desde hace 2 horas', hora: '09:15' },
+        { tipo: 'bot', texto: 'Entiendo. ¿Cómo describirías la intensidad del dolor de pecho?', hora: '09:16',
+          opciones: ['Leve (1-3)', 'Moderado (4-6)', 'Intenso (7-9)', 'Severo (10)'] },
+        { tipo: 'user', texto: 'Intenso (7-9)', hora: '09:16' },
+        { tipo: 'bot', hora: '09:16', resultado: { nivel: '🟡 URGENTE', color: '#FEF3C7', border: '#F59E0B', titleColor: '#92400E', levelColor: '#D97706', descColor: '#78350F',
+          desc: 'Dolor de pecho intenso con dificultad respiratoria requiere atención médica en los próximos 30 minutos. Tu turno ha sido asignado con alta prioridad.' } },
+      ]
+    },
+    JM: {
+      nombre: 'Juan Mamani', turno: '#A-051', progreso: '100%',
+      status: 'Triaje completado',
+      msgs: [
+        { tipo: 'bot', texto: '¡Hola! Soy TriajeBot. ¿Cuál es tu nombre completo?', hora: '08:52' },
+        { tipo: 'user', texto: 'Juan Mamani', hora: '08:52' },
+        { tipo: 'bot', texto: '¿Cuántos años tienes, Juan?', hora: '08:52' },
+        { tipo: 'user', texto: '45 años', hora: '08:53' },
+        { tipo: 'bot', texto: '¿Cuál es tu síntoma principal hoy?', hora: '08:53' },
+        { tipo: 'user', texto: 'Fiebre muy alta desde ayer, tengo 39.5°C', hora: '08:53' },
+        { tipo: 'bot', texto: '¿Tienes otros síntomas además de la fiebre?', hora: '08:54',
+          opciones: ['Dolor de cabeza', 'Escalofríos', 'Dolor muscular', 'Todos los anteriores'] },
+        { tipo: 'user', texto: 'Todos los anteriores', hora: '08:54' },
+        { tipo: 'bot', hora: '08:55', resultado: { nivel: '🔵 PRIORITARIO', color: '#DBEAFE', border: '#3B82F6', titleColor: '#1E3A8A', levelColor: '#2563EB', descColor: '#1E40AF',
+          desc: 'Fiebre alta con síntomas sistémicos requiere atención médica en la próxima hora. Se ha generado tu turno prioritario.' } },
+      ]
+    },
+    AS: {
+      nombre: 'Ana Suárez', turno: '#A-053', progreso: '100%',
+      status: 'Triaje completado',
+      msgs: [
+        { tipo: 'bot', texto: '¡Hola! Soy TriajeBot. ¿Cuál es tu nombre completo?', hora: '08:36' },
+        { tipo: 'user', texto: 'Ana Suárez', hora: '08:36' },
+        { tipo: 'bot', texto: '¿Cuántos años tienes, Ana?', hora: '08:36' },
+        { tipo: 'user', texto: '28 años', hora: '08:37' },
+        { tipo: 'bot', texto: '¿Cuál es tu síntoma principal hoy?', hora: '08:37' },
+        { tipo: 'user', texto: 'Dolor de cabeza leve desde esta mañana', hora: '08:37' },
+        { tipo: 'bot', texto: '¿Cómo calificarías la intensidad del dolor?', hora: '08:38',
+          opciones: ['Leve (1-3)', 'Moderado (4-6)', 'Intenso (7-9)', 'Severo (10)'] },
+        { tipo: 'user', texto: 'Leve (1-3)', hora: '08:38' },
+        { tipo: 'bot', texto: '¿Tienes fiebre, náuseas o sensibilidad a la luz?', hora: '08:38',
+          opciones: ['Sí, tengo fiebre', 'Sí, náuseas', 'Sensibilidad a la luz', 'Ninguno'] },
+        { tipo: 'user', texto: 'Ninguno', hora: '08:39' },
+        { tipo: 'bot', hora: '08:39', resultado: { nivel: '🟢 NO URGENTE', color: '#D1FAE5', border: '#10B981', titleColor: '#064E3B', levelColor: '#059669', descColor: '#065F46',
+          desc: 'Dolor de cabeza leve sin síntomas asociados. Puedes esperar tu turno con tranquilidad. Se recomienda hidratación y reposo.' } },
+      ]
+    },
+    CP: {
+      nombre: 'Carlos Pinto', turno: '#A-044', progreso: '100%',
+      status: 'Alerta enviada al médico',
+      msgs: [
+        { tipo: 'bot', texto: '¡Hola! Soy TriajeBot. ¿Cuál es tu nombre completo?', hora: '08:18' },
+        { tipo: 'user', texto: 'Carlos Pinto', hora: '08:18' },
+        { tipo: 'bot', texto: '¿Cuántos años tienes, Carlos?', hora: '08:18' },
+        { tipo: 'user', texto: '58 años', hora: '08:19' },
+        { tipo: 'bot', texto: '¿Cuál es tu síntoma principal?', hora: '08:19' },
+        { tipo: 'user', texto: 'No puedo respirar bien, siento el pecho muy apretado y me cuesta hablar', hora: '08:19' },
+        { tipo: 'bot', texto: '¿Tienes labios o dedos azulados, o sientes que te vas a desmayar?', hora: '08:20',
+          opciones: ['Sí, labios azulados', 'Me siento muy mareado', 'Ambos', 'No'] },
+        { tipo: 'user', texto: 'Me siento muy mareado', hora: '08:20' },
+        { tipo: 'bot', hora: '08:20', resultado: { nivel: '🔴 EMERGENTE', color: '#FEE2E2', border: '#EF4444', titleColor: '#7F1D1D', levelColor: '#DC2626', descColor: '#991B1B',
+          desc: 'Dificultad respiratoria severa con mareo. ATENCIÓN INMEDIATA requerida. Se ha alertado al personal médico y tu turno es el siguiente en cola.' } },
+      ]
+    }
+  };
+
+  function renderChat(key) {
+    const data = chatData[key];
+    const container = document.getElementById('chat-messages');
+    document.getElementById('chat-status').textContent = data.status;
+    document.getElementById('chat-progress-label').textContent = `Progreso del triaje: ${data.progreso}`;
+    document.getElementById('chat-progress-fill').style.width = data.progreso;
+    document.getElementById('chat-turno').textContent = data.turno;
+    document.getElementById('chat-turno-nombre').textContent = data.nombre;
+
+    container.innerHTML = data.msgs.map(m => {
+      if (m.resultado) {
+        const r = m.resultado;
+        return `<div class="msg bot" style="animation:msgIn 0.25s ease;">
+          <div class="msg-avatar">🤖</div>
+          <div>
+            <div class="msg-bubble">
+              ⚠️ Basándome en tus síntomas, he determinado tu nivel de urgencia:
+              <div style="background:${r.color};border:1.5px solid ${r.border};border-radius:var(--radius);padding:16px;margin-top:8px;">
+                <div style="font-weight:700;color:${r.titleColor};font-size:13px;">RESULTADO DEL TRIAJE</div>
+                <div style="font-size:22px;font-weight:700;color:${r.levelColor};margin:4px 0;">${r.nivel}</div>
+                <div style="font-size:12px;color:${r.descColor};line-height:1.5;">${r.desc}</div>
+              </div>
+            </div>
+            <div class="msg-time">${m.hora}</div>
+          </div>
+        </div>`;
+      }
+      const isBot = m.tipo === 'bot';
+      const opciones = m.opciones ? `<div class="option-chips">${m.opciones.map(o =>
+        `<button class="option-chip" onclick="selectOption(this)">${o}</button>`).join('')}</div>` : '';
+      return `<div class="msg ${m.tipo}" style="animation:msgIn 0.25s ease;">
+        <div class="msg-avatar">${isBot ? '🤖' : '👤'}</div>
+        <div>
+          <div class="msg-bubble">${m.texto}${opciones}</div>
+          <div class="msg-time">${m.hora}</div>
+        </div>
+      </div>`;
+    }).join('');
+
+    // scroll to bottom
+    setTimeout(() => { container.scrollTop = container.scrollHeight; }, 50);
+  }
+
+  function switchChat(key, el) {
+    document.querySelectorAll('.patient-card').forEach(c => c.classList.remove('active'));
+    el.classList.add('active');
+    renderChat(key);
+  }
+
+  // Render default chat on load
+  renderChat('MR');
 
   // ── ADMIN SECTION SWITCHER ──
   function switchAdminSection(section, clickedLink) {
     document.querySelectorAll('#screen-admin .sidebar-link').forEach(l => l.classList.remove('active'));
     clickedLink.classList.add('active');
-    const dash  = document.getElementById('admin-section-dashboard');
-    const notif = document.getElementById('admin-section-notificaciones');
-    if (section === 'notificaciones') {
-      dash.style.display = 'none';
-      notif.style.display = 'block';
-      document.getElementById('admin-breadcrumb').textContent = 'Notificaciones';
-      document.getElementById('admin-topbar-btn').textContent = '📤 Exportar historial';
-      const badge = clickedLink.querySelector('.badge-count');
-      if (badge) badge.style.display = 'none';
-    } else {
-      dash.style.display = 'block';
-      notif.style.display = 'none';
-      document.getElementById('admin-breadcrumb').textContent = 'Dashboard';
-      document.getElementById('admin-topbar-btn').textContent = '📥 Exportar reporte';
-    }
+
+    const secciones = ['dashboard','notificaciones','reportes','medicos','horarios','usuarios','auditoria','especialidades','configuracion'];
+    secciones.forEach(s => {
+      const el = document.getElementById('admin-section-' + s);
+      if (el) el.style.display = s === section ? 'block' : 'none';
+    });
+
+    const titles = {
+      dashboard:      'Dashboard',
+      notificaciones: 'Notificaciones',
+      reportes:       'Reportes',
+      medicos:        'Médicos',
+      horarios:       'Horarios',
+      usuarios:       'Usuarios',
+      auditoria:      'Auditoría',
+      especialidades: 'Especialidades',
+      configuracion:  'Configuración',
+    };
+
+    const btns = {
+      dashboard:      '📥 Exportar reporte',
+      notificaciones: '📤 Exportar historial',
+      reportes:       '📊 Ver resumen',
+      medicos:        '+ Agregar médico',
+      horarios:       '+ Asignar turno',
+      usuarios:       '+ Nuevo usuario',
+      auditoria:      '📥 Exportar log',
+      especialidades: '+ Agregar especialidad',
+      configuracion:  '💾 Guardar cambios',
+    };
+
+    document.getElementById('admin-breadcrumb').textContent = titles[section] || 'Dashboard';
+    document.getElementById('admin-topbar-btn').textContent = btns[section]   || '📥 Exportar';
+
+    const badge = clickedLink.querySelector('.badge-count');
+    if (badge) badge.style.display = 'none';
   }
 
   // ── NOTIF HISTORY DATA ──
@@ -2022,4 +2702,812 @@
       document.getElementById('modal-btn').style.display = 'block';
     }, 2400);
   }
+  
+  // ── LOGIN ──
+  function selectLoginRole(role) {
+    document.getElementById('chip-paciente').classList.toggle('active', role === 'paciente');
+    document.getElementById('chip-personal').classList.toggle('active', role === 'personal');
+    document.getElementById('login-fields-paciente').style.display = role === 'paciente' ? 'block' : 'none';
+    document.getElementById('login-fields-personal').style.display = role === 'personal' ? 'block' : 'none';
+  }
+
+  function doLogin(role) {
+    // Ocultar campos, mostrar loader
+    document.getElementById('login-fields-' + role).style.display = 'none';
+    document.getElementById('login-loading').style.display = 'block';
+
+    const steps = [
+      { text: 'Verificando credenciales...', delay: 0 },
+      { text: 'Validando permisos...', delay: 900 },
+      { text: role === 'paciente' ? 'Cargando chatbot de triaje...' : 'Cargando panel...', delay: 1700 },
+    ];
+
+    steps.forEach(s => {
+      setTimeout(() => {
+        document.getElementById('login-loading-text').textContent = s.text;
+      }, s.delay);
+    });
+
+    setTimeout(() => {
+      document.getElementById('login-loading').style.display = 'none';
+      document.getElementById('login-fields-' + role).style.display = 'block';
+      // Redirigir según rol
+      if (role === 'paciente') {
+        showScreen('chatbot');
+      } else {
+        // Personal: simular que es médico por defecto
+        // En un sistema real el backend determinaría el rol
+        const user = document.getElementById('input-per-user').value;
+        if (user.includes('admin')) {
+          showScreen('admin');
+        } else {
+          showScreen('medico');
+        }
+      }
+    }, 2500);
+  }
+  // ── REPORTES ──
+  const repData = {
+    diario: {
+      titulo: 'Atenciones de hoy — 06 Mar 2026',
+      kpis: { atenciones: 23, tiempo: '16min', satisfaccion: '96%', criticos: 3 },
+      barras: [
+        { lbl: '07h', val: 2, h: 20 }, { lbl: '08h', val: 4, h: 40 },
+        { lbl: '09h', val: 6, h: 60 }, { lbl: '10h', val: 5, h: 50 },
+        { lbl: '11h', val: 3, h: 30 }, { lbl: '12h', val: 2, h: 20 },
+        { lbl: '13h', val: 1, h: 10 },
+      ]
+    },
+    semanal: {
+      titulo: 'Atenciones por día (semana actual)',
+      kpis: { atenciones: 98, tiempo: '18min', satisfaccion: '93%', criticos: 8 },
+      barras: [
+        { lbl: 'Lun', val: 18, h: 72 }, { lbl: 'Mar', val: 22, h: 88 },
+        { lbl: 'Mié', val: 19, h: 76 }, { lbl: 'Jue', val: 16, h: 64 },
+        { lbl: 'Hoy', val: 23, h: 100, hoy: true },
+      ]
+    },
+    mensual: {
+      titulo: 'Atenciones por día (últimas 2 semanas)',
+      kpis: { atenciones: 147, tiempo: '18min', satisfaccion: '94%', criticos: 12 },
+      barras: [
+        { lbl: 'L', val: 9,  h: 36 }, { lbl: 'M', val: 14, h: 56 },
+        { lbl: 'X', val: 11, h: 44 }, { lbl: 'J', val: 18, h: 72 },
+        { lbl: 'V', val: 13, h: 52 }, { lbl: '·', val: 0,  h: 0, sep: true },
+        { lbl: 'L', val: 10, h: 40 }, { lbl: 'M', val: 16, h: 64 },
+        { lbl: 'X', val: 19, h: 76 }, { lbl: 'J', val: 14, h: 56 },
+        { lbl: 'Hoy', val: 23, h: 100, hoy: true },
+      ]
+    }
+  };
+
+  const diagnosticos = [
+    { nombre: 'Infecciones respiratorias', pct: 34, color: 'linear-gradient(90deg,var(--teal),var(--blue-light))',
+      detalle: { casos: 50, edad_prom: '38 años', urgencia_frecuente: 'Prioritario', tratamiento: 'Antibióticos, reposo', seguimiento: '48-72 horas' } },
+    { nombre: 'Dolor torácico', pct: 22, color: 'linear-gradient(90deg,var(--danger),#F97316)',
+      detalle: { casos: 32, edad_prom: '54 años', urgencia_frecuente: 'Urgente / Emergente', tratamiento: 'ECG, monitoreo cardíaco', seguimiento: 'Derivación a Cardiología' } },
+    { nombre: 'Fiebre / Sínd. febril', pct: 18, color: 'linear-gradient(90deg,var(--warning),#FBBF24)',
+      detalle: { casos: 26, edad_prom: '29 años', urgencia_frecuente: 'Prioritario', tratamiento: 'Antipiréticos, hidratación', seguimiento: '24-48 horas' } },
+    { nombre: 'Dolor abdominal', pct: 14, color: 'linear-gradient(90deg,var(--purple),var(--blue-light))',
+      detalle: { casos: 21, edad_prom: '41 años', urgencia_frecuente: 'Urgente', tratamiento: 'Ecografía, analgesia', seguimiento: 'Control en 24h' } },
+    { nombre: 'Traumatismos', pct: 8, color: 'linear-gradient(90deg,var(--success),#34D399)',
+      detalle: { casos: 12, edad_prom: '33 años', urgencia_frecuente: 'Prioritario', tratamiento: 'Radiografía, inmovilización', seguimiento: 'Traumatología' } },
+    { nombre: 'Otros', pct: 4, color: 'var(--border)',
+      detalle: { casos: 6, edad_prom: '—', urgencia_frecuente: 'No urgente', tratamiento: 'Variado', seguimiento: 'Según diagnóstico' } },
+  ];
+
+  let repTabActual = 'mensual';
+
+  function switchRepTab(tab) {
+    repTabActual = tab;
+    ['diario','semanal','mensual'].forEach(t => {
+      const el = document.getElementById('rep-tab-' + t);
+      if (t === tab) {
+        el.classList.add('active');
+        el.style.background = 'white';
+        el.style.color = 'var(--blue)';
+        el.style.boxShadow = '0 2px 8px rgba(0,0,0,0.08)';
+      } else {
+        el.classList.remove('active');
+        el.style.background = 'transparent';
+        el.style.color = 'var(--text2)';
+        el.style.boxShadow = 'none';
+      }
+    });
+    renderReportes(tab);
+  }
+
+  function renderReportes(tab) {
+    const d = repData[tab];
+
+    // KPIs
+    document.getElementById('rep-kpi-atenciones').textContent  = d.kpis.atenciones;
+    document.getElementById('rep-kpi-tiempo').innerHTML        = d.kpis.tiempo.replace('min','<span style="font-size:14px;">min</span>');
+    document.getElementById('rep-kpi-satisfaccion').innerHTML  = d.kpis.satisfaccion.replace('%','<span style="font-size:14px;">%</span>');
+    document.getElementById('rep-kpi-criticos').textContent    = d.kpis.criticos;
+
+    // Título gráfica
+    document.getElementById('rep-chart-title').textContent = d.titulo;
+
+    // Barras
+    document.getElementById('rep-chart-bars').innerHTML = d.barras.map(b => {
+      if (b.sep) return `<div style="width:1px;background:var(--border);height:100%;margin:0 2px;"></div>`;
+      const grad = b.hoy
+        ? 'linear-gradient(to top,var(--teal),#06D6A0)'
+        : 'linear-gradient(to top,var(--blue),var(--teal-light))';
+      const lblColor = b.hoy ? 'var(--teal)' : 'var(--text3)';
+      return `<div style="display:flex;flex-direction:column;align-items:center;gap:5px;flex:1;">
+        <div style="font-size:9px;color:${lblColor};font-weight:${b.hoy?'700':'600'}">${b.val}</div>
+        <div style="width:100%;border-radius:5px 5px 0 0;background:${grad};height:${b.h}px;transition:height 0.4s ease;"></div>
+        <div style="font-size:9px;color:${lblColor};font-weight:${b.hoy?'700':'400'}">${b.lbl}</div>
+      </div>`;
+    }).join('');
+
+    // Diagnósticos
+    document.getElementById('rep-diagnosticos').innerHTML = diagnosticos.map((d, i) =>
+      `<div onclick="verDetalleDiag(${i})" style="cursor:pointer;transition:background 0.15s;padding:4px 6px;border-radius:8px;" onmouseover="this.style.background='var(--surface)'" onmouseout="this.style.background='transparent'">
+        <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;">
+          <span style="font-weight:600;color:var(--text);">${d.nombre}</span>
+          <span style="color:var(--blue);font-weight:700;">${d.pct}% <span style="color:var(--text3);font-weight:400;">→</span></span>
+        </div>
+        <div style="height:7px;background:var(--surface);border-radius:10px;overflow:hidden;">
+          <div style="width:${d.pct}%;height:100%;background:${d.color};border-radius:10px;"></div>
+        </div>
+      </div>`
+    ).join('');
+  }
+
+  function verDetalleDiag(i) {
+    const d = diagnosticos[i];
+    document.getElementById('rep-modal-title').textContent = '📊 ' + d.nombre;
+    document.getElementById('rep-modal-body').innerHTML = `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+        <div style="background:var(--surface);border-radius:var(--radius);padding:14px;text-align:center;">
+          <div style="font-size:26px;font-weight:700;color:var(--blue);">${d.detalle.casos}</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:3px;text-transform:uppercase;font-weight:600;">Casos este mes</div>
+        </div>
+        <div style="background:var(--surface);border-radius:var(--radius);padding:14px;text-align:center;">
+          <div style="font-size:26px;font-weight:700;color:var(--teal);">${d.pct}%</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:3px;text-transform:uppercase;font-weight:600;">Del total</div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div style="display:flex;justify-content:space-between;padding:10px 14px;background:var(--surface);border-radius:8px;">
+          <span style="font-size:12px;color:var(--text3);font-weight:600;">Edad promedio</span>
+          <span style="font-size:12px;font-weight:700;color:var(--text);">${d.detalle.edad_prom}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:10px 14px;background:var(--surface);border-radius:8px;">
+          <span style="font-size:12px;color:var(--text3);font-weight:600;">Urgencia frecuente</span>
+          <span style="font-size:12px;font-weight:700;color:var(--text);">${d.detalle.urgencia_frecuente}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:10px 14px;background:var(--surface);border-radius:8px;">
+          <span style="font-size:12px;color:var(--text3);font-weight:600;">Tratamiento habitual</span>
+          <span style="font-size:12px;font-weight:700;color:var(--text);">${d.detalle.tratamiento}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:10px 14px;background:var(--surface);border-radius:8px;">
+          <span style="font-size:12px;color:var(--text3);font-weight:600;">Seguimiento</span>
+          <span style="font-size:12px;font-weight:700;color:var(--text);">${d.detalle.seguimiento}</span>
+        </div>
+      </div>`;
+    document.getElementById('rep-modal').style.display = 'flex';
+  }
+
+  function aplicarFiltroRep() {
+    const desde = document.getElementById('rep-fecha-desde').value;
+    const hasta = document.getElementById('rep-fecha-hasta').value;
+    if (!desde || !hasta) return;
+    const fmtDesde = desde.split('-').reverse().join('/');
+    const fmtHasta = hasta.split('-').reverse().join('/');
+    const badge = document.getElementById('rep-filtro-badge');
+    document.getElementById('rep-filtro-texto').textContent =
+      `Mostrando datos del ${fmtDesde} al ${fmtHasta}`;
+    badge.style.display = 'flex';
+  }
+
+  function limpiarFiltroRep() {
+    document.getElementById('rep-filtro-badge').style.display = 'none';
+    document.getElementById('rep-fecha-desde').value = '2026-03-01';
+    document.getElementById('rep-fecha-hasta').value = '2026-03-06';
+  }
+
+  function simularExportPDF() {
+    const modal = document.getElementById('rep-pdf-modal');
+    modal.style.display = 'flex';
+    document.getElementById('rep-pdf-icon').textContent  = '📄';
+    document.getElementById('rep-pdf-title').textContent = 'Generando reporte PDF...';
+    document.getElementById('rep-pdf-sub').textContent   = 'Compilando datos del Dr. García';
+    document.getElementById('rep-pdf-fill').style.width  = '0%';
+    document.getElementById('rep-pdf-btn').style.display = 'none';
+
+    const pasos = [
+      { pct: '30%', txt: '📊 Procesando estadísticas...', delay: 200 },
+      { pct: '60%', txt: '📋 Generando tablas de diagnósticos...', delay: 1000 },
+      { pct: '85%', txt: '🎨 Aplicando formato del reporte...', delay: 1900 },
+      { pct: '100%', txt: '✓ Reporte listo', delay: 2700 },
+    ];
+
+    pasos.forEach(p => setTimeout(() => {
+      document.getElementById('rep-pdf-fill').style.width = p.pct;
+      document.getElementById('rep-pdf-steps').textContent = p.txt;
+    }, p.delay));
+
+    setTimeout(() => {
+      document.getElementById('rep-pdf-icon').textContent  = '✅';
+      document.getElementById('rep-pdf-title').textContent = '¡Reporte generado!';
+      document.getElementById('rep-pdf-sub').textContent   = 'Reporte_DrGarcia_2026-03-06.pdf · 248 KB';
+      document.getElementById('rep-pdf-btn').style.display = 'block';
+    }, 3200);
+  }
+
+  // Inicializar reportes con vista mensual
+  renderReportes('mensual');
+  
+  // ── REPORTES ADMIN ──
+  const admRepData = {
+    diario: {
+      titulo: 'Atenciones del sistema — Hoy 06 Mar 2026',
+      kpis: { pacientes: 47, triajes: 41, espera: '18min', notif: 134 },
+      barras: [
+        { lbl: '07h', val: 4,  h: 20 }, { lbl: '08h', val: 9,  h: 45 },
+        { lbl: '09h', val: 12, h: 60 }, { lbl: '10h', val: 10, h: 50 },
+        { lbl: '11h', val: 8,  h: 40 }, { lbl: '12h', val: 4,  h: 20 },
+      ]
+    },
+    semanal: {
+      titulo: 'Atenciones del sistema — Semana actual',
+      kpis: { pacientes: 218, triajes: 196, espera: '19min', notif: 642 },
+      barras: [
+        { lbl: 'Lun', val: 38, h: 76 }, { lbl: 'Mar', val: 45, h: 90 },
+        { lbl: 'Mié', val: 41, h: 82 }, { lbl: 'Jue', val: 47, h: 94 },
+        { lbl: 'Hoy', val: 47, h: 100, hoy: true },
+      ]
+    },
+    mensual: {
+      titulo: 'Atenciones totales por día (mes actual)',
+      kpis: { pacientes: 1240, triajes: 1108, espera: '21min', notif: 3892 },
+      barras: [
+        { lbl: 'S1-L', val: 35, h: 44 }, { lbl: 'S1-M', val: 48, h: 60 },
+        { lbl: 'S1-X', val: 42, h: 53 }, { lbl: 'S1-J', val: 51, h: 64 },
+        { lbl: 'S1-V', val: 39, h: 49 },
+        { lbl: '·', sep: true },
+        { lbl: 'S2-L', val: 44, h: 55 }, { lbl: 'S2-M', val: 52, h: 65 },
+        { lbl: 'S2-X', val: 47, h: 59 }, { lbl: 'S2-J', val: 55, h: 69 },
+        { lbl: 'Hoy', val: 80, h: 100, hoy: true },
+      ]
+    }
+  };
+
+  const admUrgData = {
+    emergente:   { label: '🔴 Emergente',  color: '#EF4444', bg: '#FEE2E2', casos: 74,  pct: 6,  espera: '< 5 min',  derivacion: 'UCI / Especialista', protocolo: 'Activación inmediata del equipo médico' },
+    urgente:     { label: '🟡 Urgente',    color: '#F59E0B', bg: '#FEF3C7', casos: 211, pct: 17, espera: '< 30 min', derivacion: 'Urgencias', protocolo: 'Evaluación médica prioritaria' },
+    prioritario: { label: '🔵 Prioritario',color: '#3B82F6', bg: '#DBEAFE', casos: 372, pct: 30, espera: '< 1 hora', derivacion: 'Consulta externa', protocolo: 'Atención programada en el día' },
+    'no-urgente':{ label: '🟢 No urgente', color: '#10B981', bg: '#D1FAE5', casos: 583, pct: 47, espera: '< 2 horas', derivacion: 'Medicina general', protocolo: 'Turno regular, posible cita' },
+  };
+
+  const admMedicos = [
+    { nombre: 'Dr. García',    esp: 'Urgencias',      atenciones: 147, tiempo: '18 min', satisfaccion: '94%', activo: true },
+    { nombre: 'Dra. López',    esp: 'Cardiología',    atenciones: 132, tiempo: '22 min', satisfaccion: '97%', activo: true },
+    { nombre: 'Dr. Mendoza',   esp: 'Neumología',     atenciones: 118, tiempo: '20 min', satisfaccion: '91%', activo: true },
+    { nombre: 'Dra. Vargas',   esp: 'Neurología',     atenciones: 104, tiempo: '25 min', satisfaccion: '95%', activo: false },
+    { nombre: 'Dr. Quispe',    esp: 'Traumatología',  atenciones: 98,  tiempo: '15 min', satisfaccion: '89%', activo: true },
+  ];
+
+  let admRepTabActual = 'mensual';
+
+  function switchAdmRepTab(tab) {
+    admRepTabActual = tab;
+    ['diario','semanal','mensual'].forEach(t => {
+      const el = document.getElementById('adm-tab-' + t);
+      if (t === tab) {
+        el.style.background = 'white';
+        el.style.color = 'var(--blue)';
+        el.style.boxShadow = '0 2px 8px rgba(0,0,0,0.08)';
+      } else {
+        el.style.background = 'transparent';
+        el.style.color = 'var(--text2)';
+        el.style.boxShadow = 'none';
+      }
+    });
+    renderAdmReportes(tab);
+  }
+
+  function renderAdmReportes(tab) {
+    const d = admRepData[tab];
+
+    // KPIs
+    document.getElementById('adm-kpi-pacientes').textContent = d.kpis.pacientes.toLocaleString();
+    document.getElementById('adm-kpi-triajes').textContent   = d.kpis.triajes.toLocaleString();
+    document.getElementById('adm-kpi-espera').innerHTML      = d.kpis.espera.replace('min','<span style="font-size:14px;">min</span>');
+    document.getElementById('adm-kpi-notif').textContent     = d.kpis.notif.toLocaleString();
+    document.getElementById('adm-chart-title').textContent   = d.titulo;
+
+    // Barras
+    document.getElementById('adm-chart-bars').innerHTML = d.barras.map(b => {
+      if (b.sep) return `<div style="width:1px;background:var(--border);height:100%;margin:0 2px;align-self:stretch;"></div>`;
+      const grad = b.hoy ? 'linear-gradient(to top,var(--teal),#06D6A0)' : 'linear-gradient(to top,var(--blue),var(--teal-light))';
+      const c = b.hoy ? 'var(--teal)' : 'var(--text3)';
+      return `<div style="display:flex;flex-direction:column;align-items:center;gap:5px;flex:1;">
+        <div style="font-size:9px;color:${c};font-weight:${b.hoy?'700':'600'}">${b.val}</div>
+        <div style="width:100%;border-radius:5px 5px 0 0;background:${grad};height:${b.h}px;transition:height 0.4s ease;"></div>
+        <div style="font-size:9px;color:${c};font-weight:${b.hoy?'700':'400'}">${b.lbl}</div>
+      </div>`;
+    }).join('');
+
+    // Tabla médicos
+    document.getElementById('adm-medicos-table').innerHTML = admMedicos.map((m, i) => {
+      const bg = i % 2 === 0 ? 'white' : 'var(--surface)';
+      const estadoBg    = m.activo ? '#D1FAE5' : '#F1F5F9';
+      const estadoColor = m.activo ? '#059669' : '#94A3B8';
+      const estadoTxt   = m.activo ? '● En turno' : '○ Fuera de turno';
+      return `<div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr;background:${bg};border-bottom:1px solid var(--surface);align-items:center;">
+        <div style="padding:12px 14px;display:flex;align-items:center;gap:10px;">
+          <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--blue),var(--teal));display:flex;align-items:center;justify-content:center;color:white;font-size:11px;font-weight:700;">${m.nombre.split(' ').map(w=>w[0]).join('').slice(0,2)}</div>
+          <div><div style="font-size:13px;font-weight:600;color:var(--text);">${m.nombre}</div><div style="font-size:11px;color:var(--text3);">${m.esp}</div></div>
+        </div>
+        <div style="padding:12px 14px;font-size:13px;font-weight:700;color:var(--blue);">${m.atenciones}</div>
+        <div style="padding:12px 14px;font-size:13px;color:var(--text2);">${m.tiempo}</div>
+        <div style="padding:12px 14px;font-size:13px;color:var(--success);font-weight:600;">${m.satisfaccion}</div>
+        <div style="padding:12px 14px;"><span style="background:${estadoBg};color:${estadoColor};padding:3px 9px;border-radius:20px;font-size:10px;font-weight:700;">${estadoTxt}</span></div>
+      </div>`;
+    }).join('');
+  }
+
+  function verDetalleUrgAdmin(key) {
+    const d = admUrgData[key];
+    document.getElementById('adm-urg-modal-title').textContent = d.label;
+    document.getElementById('adm-urg-modal-body').innerHTML = `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+        <div style="background:${d.bg};border-radius:var(--radius);padding:14px;text-align:center;">
+          <div style="font-size:26px;font-weight:700;color:${d.color};">${d.casos}</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:3px;font-weight:600;text-transform:uppercase;">Casos este mes</div>
+        </div>
+        <div style="background:var(--surface);border-radius:var(--radius);padding:14px;text-align:center;">
+          <div style="font-size:26px;font-weight:700;color:var(--blue);">${d.pct}%</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:3px;font-weight:600;text-transform:uppercase;">Del total</div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div style="display:flex;justify-content:space-between;padding:10px 14px;background:var(--surface);border-radius:8px;">
+          <span style="font-size:12px;color:var(--text3);font-weight:600;">Tiempo máx. de espera</span>
+          <span style="font-size:12px;font-weight:700;color:var(--text);">${d.espera}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:10px 14px;background:var(--surface);border-radius:8px;">
+          <span style="font-size:12px;color:var(--text3);font-weight:600;">Derivación habitual</span>
+          <span style="font-size:12px;font-weight:700;color:var(--text);">${d.derivacion}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:10px 14px;background:var(--surface);border-radius:8px;">
+          <span style="font-size:12px;color:var(--text3);font-weight:600;">Protocolo</span>
+          <span style="font-size:12px;font-weight:700;color:var(--text);">${d.protocolo}</span>
+        </div>
+      </div>`;
+    document.getElementById('adm-urg-modal').style.display = 'flex';
+  }
+
+  function aplicarFiltroAdmRep() {
+    const desde = document.getElementById('adm-fecha-desde').value;
+    const hasta = document.getElementById('adm-fecha-hasta').value;
+    if (!desde || !hasta) return;
+    const fmt = v => v.split('-').reverse().join('/');
+    const badge = document.getElementById('adm-filtro-badge');
+    document.getElementById('adm-filtro-texto').textContent = `Mostrando datos del ${fmt(desde)} al ${fmt(hasta)}`;
+    badge.style.display = 'flex';
+  }
+
+  function limpiarFiltroAdmRep() {
+    document.getElementById('adm-filtro-badge').style.display = 'none';
+    document.getElementById('adm-fecha-desde').value = '2026-03-01';
+    document.getElementById('adm-fecha-hasta').value = '2026-03-06';
+  }
+
+  function simularExportAdmPDF() {
+    const modal = document.getElementById('adm-pdf-modal');
+    modal.style.display = 'flex';
+    document.getElementById('adm-pdf-icon').textContent  = '📄';
+    document.getElementById('adm-pdf-title').textContent = 'Generando reporte PDF...';
+    document.getElementById('adm-pdf-sub').textContent   = 'Compilando datos del sistema';
+    document.getElementById('adm-pdf-fill').style.width  = '0%';
+    document.getElementById('adm-pdf-btn').style.display = 'none';
+    document.getElementById('adm-pdf-steps').textContent = '';
+
+    const pasos = [
+      { pct: '25%', txt: '📊 Procesando estadísticas globales...', delay: 200  },
+      { pct: '55%', txt: '👨‍⚕️ Compilando rendimiento médico...',  delay: 1000 },
+      { pct: '80%', txt: '📋 Generando tablas de urgencias...',     delay: 1800 },
+      { pct: '100%',txt: '✓ Reporte listo',                        delay: 2600 },
+    ];
+    pasos.forEach(p => setTimeout(() => {
+      document.getElementById('adm-pdf-fill').style.width = p.pct;
+      document.getElementById('adm-pdf-steps').textContent = p.txt;
+    }, p.delay));
+
+    setTimeout(() => {
+      document.getElementById('adm-pdf-icon').textContent  = '✅';
+      document.getElementById('adm-pdf-title').textContent = '¡Reporte generado!';
+      document.getElementById('adm-pdf-sub').textContent   = `Reporte_Sistema_${admRepTabActual}_2026-03-06.pdf · 512 KB`;
+      document.getElementById('adm-pdf-btn').style.display = 'block';
+    }, 3100);
+  }
+
+  // Inicializar reportes admin
+  renderAdmReportes('mensual');
+  
+  // ══════════════════════════════
+  // MÉDICOS
+  // ══════════════════════════════
+  let medicosData = [
+    { nombre: 'Dr. García',   esp: 'Urgencias',     email: 'garcia@hospital.com',  turno: 'Mañana 07:00–14:00', atenciones: 147, satisfaccion: '94%', activo: true  },
+    { nombre: 'Dra. López',   esp: 'Cardiología',   email: 'lopez@hospital.com',   turno: 'Tarde 14:00–21:00',  atenciones: 132, satisfaccion: '97%', activo: true  },
+    { nombre: 'Dr. Mendoza',  esp: 'Neumología',    email: 'mendoza@hospital.com', turno: 'Mañana 07:00–14:00', atenciones: 118, satisfaccion: '91%', activo: true  },
+    { nombre: 'Dra. Vargas',  esp: 'Neurología',    email: 'vargas@hospital.com',  turno: 'Noche 21:00–07:00',  atenciones: 104, satisfaccion: '95%', activo: false },
+    { nombre: 'Dr. Quispe',   esp: 'Traumatología', email: 'quispe@hospital.com',  turno: '24/7',               atenciones: 98,  satisfaccion: '89%', activo: true  },
+    { nombre: 'Dra. Mamani',  esp: 'Med. General',  email: 'mamani@hospital.com',  turno: 'Tarde 14:00–21:00',  atenciones: 86,  satisfaccion: '92%', activo: true  },
+  ];
+
+  const espIcons = { 'Urgencias':'🚨','Cardiología':'🫀','Neumología':'🫁','Neurología':'🧠','Traumatología':'🦴','Med. General':'🩺' };
+
+  function renderMedicos() {
+    const grid = document.getElementById('medicos-grid');
+    if (!grid) return;
+    grid.innerHTML = medicosData.map((m, i) => {
+      const initials = m.nombre.split(' ').map(w=>w[0]).join('').slice(0,2);
+      const grads = ['135deg,#3B82F6,#0694A2','135deg,#7C3AED,#3B82F6','135deg,#EF4444,#F59E0B','135deg,#10B981,#0694A2','135deg,#F59E0B,#EF4444','135deg,#0694A2,#3B82F6'];
+      const estadoBg = m.activo ? '#D1FAE5' : '#F1F5F9';
+      const estadoC  = m.activo ? '#059669' : '#94A3B8';
+      const estadoT  = m.activo ? '● En turno' : '○ Fuera de turno';
+      return `<div style="background:white;border-radius:var(--radius-lg);border:1px solid var(--border);padding:20px;box-shadow:var(--shadow);transition:box-shadow 0.2s;" onmouseover="this.style.boxShadow='var(--shadow-lg)'" onmouseout="this.style.boxShadow='var(--shadow)'">
+        <div style="display:flex;align-items:flex-start;gap:14px;margin-bottom:16px;">
+          <div style="width:50px;height:50px;border-radius:14px;background:linear-gradient(${grads[i%grads.length]});display:flex;align-items:center;justify-content:center;color:white;font-size:17px;font-weight:700;flex-shrink:0;">${initials}</div>
+          <div style="flex:1;">
+            <div style="font-size:14px;font-weight:700;color:var(--text);">${m.nombre}</div>
+            <div style="font-size:12px;color:var(--text3);margin-top:2px;">${espIcons[m.esp]||'🩺'} ${m.esp}</div>
+          </div>
+          <span style="background:${estadoBg};color:${estadoC};padding:3px 9px;border-radius:20px;font-size:10px;font-weight:700;flex-shrink:0;">${estadoT}</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:7px;margin-bottom:16px;">
+          <div style="display:flex;justify-content:space-between;font-size:12px;"><span style="color:var(--text3);">🕐 Turno</span><span style="font-weight:600;color:var(--text);">${m.turno}</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;"><span style="color:var(--text3);">📋 Atenciones</span><span style="font-weight:700;color:var(--blue);">${m.atenciones}</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;"><span style="color:var(--text3);">⭐ Satisfacción</span><span style="font-weight:700;color:var(--success);">${m.satisfaccion}</span></div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button onclick="abrirModalMedico(${i})" class="btn-sm" style="flex:1;justify-content:center;font-size:12px;">✏️ Editar</button>
+          <button onclick="toggleMedico(${i})" class="btn-sm" style="flex:1;justify-content:center;font-size:12px;color:${m.activo?'var(--danger)':'var(--success)'};border-color:${m.activo?'var(--danger)':'var(--success)'};">${m.activo?'⏸ Desactivar':'▶ Activar'}</button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  let editandoMedico = -1;
+  function abrirModalMedico(i) {
+    editandoMedico = i;
+    const m = i >= 0 ? medicosData[i] : null;
+    document.getElementById('modal-medico-title').textContent = m ? 'Editar médico' : 'Agregar médico';
+    document.getElementById('med-form-nombre').value = m ? m.nombre : '';
+    document.getElementById('med-form-email').value  = m ? m.email  : '';
+    document.getElementById('med-form-esp').value    = m ? m.esp    : 'Urgencias';
+    document.getElementById('med-form-turno').value  = m ? m.turno  : 'Mañana 07:00–14:00';
+    document.getElementById('modal-medico').style.display = 'flex';
+  }
+
+  function guardarMedico() {
+    const nombre = document.getElementById('med-form-nombre').value.trim();
+    const email  = document.getElementById('med-form-email').value.trim();
+    const esp    = document.getElementById('med-form-esp').value;
+    const turno  = document.getElementById('med-form-turno').value;
+    if (!nombre) return;
+    if (editandoMedico >= 0) {
+      medicosData[editandoMedico] = { ...medicosData[editandoMedico], nombre, email, esp, turno };
+    } else {
+      medicosData.push({ nombre, esp, email, turno, atenciones: 0, satisfaccion: '—', activo: true });
+    }
+    document.getElementById('modal-medico').style.display = 'none';
+    renderMedicos();
+  }
+
+  function toggleMedico(i) {
+    medicosData[i].activo = !medicosData[i].activo;
+    renderMedicos();
+  }
+
+  // ══════════════════════════════
+  // HORARIOS
+  // ══════════════════════════════
+  const horariosData = [
+    { nombre: 'Dr. García',  esp: 'Urgencias',     turnos: ['M','M','M','M','M'] },
+    { nombre: 'Dra. López',  esp: 'Cardiología',   turnos: ['T','T','L','T','T'] },
+    { nombre: 'Dr. Mendoza', esp: 'Neumología',     turnos: ['M','L','M','M','N'] },
+    { nombre: 'Dra. Vargas', esp: 'Neurología',     turnos: ['N','N','N','L','L'] },
+    { nombre: 'Dr. Quispe',  esp: 'Traumatología',  turnos: ['M','T','M','T','M'] },
+  ];
+
+  const turnoStyle = {
+    M: { bg:'#DBEAFE', border:'#3B82F6', color:'#1E40AF', label:'Mañana' },
+    T: { bg:'#D1FAE5', border:'#10B981', color:'#065F46', label:'Tarde'  },
+    N: { bg:'#EDE9FE', border:'#7C3AED', color:'#4C1D95', label:'Noche'  },
+    L: { bg:'#FEE2E2', border:'#EF4444', color:'#991B1B', label:'Libre'  },
+  };
+
+  function renderHorarios() {
+    const filtroEsp = document.getElementById('horario-filtro-esp')?.value || '';
+    const datos = filtroEsp ? horariosData.filter(h => h.esp === filtroEsp) : horariosData;
+    document.getElementById('horarios-tabla').innerHTML = datos.map((h, i) => {
+      const bg = i % 2 === 0 ? 'white' : 'var(--surface)';
+      const celdas = h.turnos.map(t => {
+        const s = turnoStyle[t];
+        return `<div style="padding:10px 8px;text-align:center;border-bottom:1px solid var(--surface);">
+          <div style="background:${s.bg};border:1px solid ${s.border};color:${s.color};border-radius:8px;padding:5px 8px;font-size:11px;font-weight:700;display:inline-block;">${s.label}</div>
+        </div>`;
+      }).join('');
+      return `<div style="display:grid;grid-template-columns:180px repeat(5,1fr);background:${bg};align-items:center;">
+        <div style="padding:12px 14px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--surface);">
+          <div style="font-size:13px;font-weight:600;color:var(--text);">${h.nombre}</div>
+        </div>
+        ${celdas}
+      </div>`;
+    }).join('');
+  }
+
+  // ══════════════════════════════
+  // USUARIOS
+  // ══════════════════════════════
+  const usuariosData = [
+    { nombre: 'Admin Sistema',    email: 'admin@hospital.com',    rol: 'admin',    rolLabel:'🛠️ Admin',     fecha:'01/01/2026', activo: true  },
+    { nombre: 'Dr. García',       email: 'garcia@hospital.com',   rol: 'medico',   rolLabel:'👨‍⚕️ Médico',   fecha:'05/01/2026', activo: true  },
+    { nombre: 'Dra. López',       email: 'lopez@hospital.com',    rol: 'medico',   rolLabel:'👨‍⚕️ Médico',   fecha:'05/01/2026', activo: true  },
+    { nombre: 'Dr. Mendoza',      email: 'mendoza@hospital.com',  rol: 'medico',   rolLabel:'👨‍⚕️ Médico',   fecha:'06/01/2026', activo: true  },
+    { nombre: 'Dra. Vargas',      email: 'vargas@hospital.com',   rol: 'medico',   rolLabel:'👨‍⚕️ Médico',   fecha:'06/01/2026', activo: false },
+    { nombre: 'María Rodríguez',  email: 'maria.r@gmail.com',     rol: 'paciente', rolLabel:'🧑 Paciente',   fecha:'10/02/2026', activo: true  },
+    { nombre: 'Juan Mamani',      email: 'jmamani@gmail.com',     rol: 'paciente', rolLabel:'🧑 Paciente',   fecha:'12/02/2026', activo: true  },
+    { nombre: 'Carlos Pinto',     email: 'cpinto@gmail.com',      rol: 'paciente', rolLabel:'🧑 Paciente',   fecha:'01/03/2026', activo: true  },
+    { nombre: 'Ana Suárez',       email: 'asuarez@gmail.com',     rol: 'paciente', rolLabel:'🧑 Paciente',   fecha:'03/03/2026', activo: true  },
+    { nombre: 'Luis Vargas',      email: 'lvargas@gmail.com',     rol: 'paciente', rolLabel:'🧑 Paciente',   fecha:'04/03/2026', activo: false },
+  ];
+
+  let usrFiltroRol = 'todos';
+
+  function setUsrFiltro(rol, el) {
+    usrFiltroRol = rol;
+    el.closest('div').querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+    el.classList.add('active');
+    renderUsuarios();
+  }
+
+  function renderUsuarios() {
+    const search = (document.getElementById('usr-search')?.value || '').toLowerCase();
+    const tabla  = document.getElementById('usuarios-tabla');
+    if (!tabla) return;
+    const filtered = usuariosData.filter(u => {
+      const matchRol  = usrFiltroRol === 'todos' || u.rol === usrFiltroRol;
+      const matchSearch = !search || u.nombre.toLowerCase().includes(search) || u.email.toLowerCase().includes(search);
+      return matchRol && matchSearch;
+    });
+    const rolColors = { admin:'#EDE9FE:#7C3AED', medico:'#DBEAFE:#2563EB', paciente:'#D1FAE5:#059669' };
+    tabla.innerHTML = filtered.map((u, i) => {
+      const [rbg, rc] = (rolColors[u.rol]||'#F1F5F9:#94A3B8').split(':');
+      const estadoBg = u.activo ? '#D1FAE5' : '#FEE2E2';
+      const estadoC  = u.activo ? '#059669' : '#DC2626';
+      const estadoT  = u.activo ? '● Activo' : '● Inactivo';
+      const initials = u.nombre.split(' ').map(w=>w[0]).join('').slice(0,2);
+      const bg = i % 2 === 0 ? 'white' : 'var(--surface)';
+      return `<div style="display:grid;grid-template-columns:2fr 1.2fr 1fr 1fr 1fr 90px;background:${bg};border-bottom:1px solid var(--surface);align-items:center;">
+        <div style="padding:12px 14px;display:flex;align-items:center;gap:10px;">
+          <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--blue),var(--teal));display:flex;align-items:center;justify-content:center;color:white;font-size:11px;font-weight:700;">${initials}</div>
+          <span style="font-size:13px;font-weight:600;color:var(--text);">${u.nombre}</span>
+        </div>
+        <div style="padding:12px 14px;font-size:12px;color:var(--text3);">${u.email}</div>
+        <div style="padding:12px 14px;"><span style="background:${rbg};color:${rc};padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700;">${u.rolLabel}</span></div>
+        <div style="padding:12px 14px;font-size:12px;color:var(--text3);">${u.fecha}</div>
+        <div style="padding:12px 14px;"><span style="background:${estadoBg};color:${estadoC};padding:3px 9px;border-radius:20px;font-size:10px;font-weight:700;">${estadoT}</span></div>
+        <div style="padding:12px 14px;display:flex;gap:4px;justify-content:flex-end;">
+          <div class="icon-btn" title="Editar">✏️</div>
+          <div class="icon-btn" title="${u.activo?'Desactivar':'Activar'}" onclick="toggleUsuario(${usuariosData.indexOf(u)})">${u.activo?'⏸':'▶'}</div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  function toggleUsuario(i) {
+    usuariosData[i].activo = !usuariosData[i].activo;
+    renderUsuarios();
+  }
+
+  // ══════════════════════════════
+  // AUDITORÍA
+  // ══════════════════════════════
+  const auditoriaData = [
+    { nivel:'error',   hora:'09:16', usuario:'TriajeBot',  accion:'Alerta EMERGENTE disparada — Carlos Pinto #PAC-2041',        modulo:'Triaje'         },
+    { nivel:'info',    hora:'09:14', usuario:'TriajeBot',  accion:'Triaje completado — María Rodríguez clasificada como Urgente', modulo:'Triaje'         },
+    { nivel:'info',    hora:'09:10', usuario:'n8n',        accion:'Notificación WhatsApp entregada — Turno #A-047',              modulo:'Notificaciones' },
+    { nivel:'warning', hora:'09:08', usuario:'Sistema',    accion:'Tiempo de espera excedido — Turno #A-047 (8 min)',            modulo:'Turnos'         },
+    { nivel:'info',    hora:'08:58', usuario:'n8n',        accion:'Webhook disparado — flujo "Aviso de Turno" ejecutado',        modulo:'Notificaciones' },
+    { nivel:'info',    hora:'08:45', usuario:'Dr. García', accion:'Inicio de sesión exitoso — IP 192.168.1.10',                  modulo:'Auth'           },
+    { nivel:'info',    hora:'08:40', usuario:'Admin',      accion:'Especialidad "Pediatría" habilitada en el sistema',           modulo:'Especialidades' },
+    { nivel:'warning', hora:'08:30', usuario:'n8n',        accion:'Flujo "Resultado Triaje" finalizó con advertencia',          modulo:'Notificaciones' },
+    { nivel:'info',    hora:'08:20', usuario:'TriajeBot',  accion:'Triaje iniciado — Carlos Pinto #PAC-2041',                   modulo:'Triaje'         },
+    { nivel:'error',   hora:'07:55', usuario:'Sistema',    accion:'Error SMTP — correo a lvargas@gmail.com no entregado',       modulo:'Notificaciones' },
+    { nivel:'info',    hora:'07:30', usuario:'Admin',      accion:'Reporte mensual exportado — Reporte_Sistema_mensual.pdf',    modulo:'Reportes'       },
+    { nivel:'info',    hora:'07:00', usuario:'Sistema',    accion:'Backup automático completado — 256 MB',                      modulo:'Sistema'        },
+  ];
+
+  let audFiltroNivel = 'todos';
+
+  const nivStyle = {
+    info:    { bg:'#DBEAFE', color:'#2563EB', icon:'ℹ️' },
+    warning: { bg:'#FEF3C7', color:'#D97706', icon:'⚠️' },
+    error:   { bg:'#FEE2E2', color:'#DC2626', icon:'🔴' },
+  };
+
+  function setAudFiltro(nivel, el) {
+    audFiltroNivel = nivel;
+    el.closest('div').querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+    el.classList.add('active');
+    renderAuditoria();
+  }
+
+  function renderAuditoria() {
+    const usrFiltro = document.getElementById('aud-usuario')?.value || '';
+    const tabla = document.getElementById('auditoria-tabla');
+    if (!tabla) return;
+    const filtered = auditoriaData.filter(a => {
+      const matchNivel = audFiltroNivel === 'todos' || a.nivel === audFiltroNivel;
+      const matchUsr   = !usrFiltro || a.usuario === usrFiltro;
+      return matchNivel && matchUsr;
+    });
+    tabla.innerHTML = filtered.map((a, i) => {
+      const s  = nivStyle[a.nivel];
+      const bg = i % 2 === 0 ? 'white' : 'var(--surface)';
+      return `<div style="display:grid;grid-template-columns:80px 120px 1.5fr 2fr 100px;background:${bg};border-bottom:1px solid var(--surface);align-items:center;">
+        <div style="padding:11px 14px;"><span style="background:${s.bg};color:${s.color};padding:3px 8px;border-radius:8px;font-size:10px;font-weight:700;">${s.icon} ${a.nivel.toUpperCase()}</span></div>
+        <div style="padding:11px 14px;font-size:12px;color:var(--text3);font-weight:600;">${a.hora}</div>
+        <div style="padding:11px 14px;font-size:12px;font-weight:600;color:var(--text);">${a.usuario}</div>
+        <div style="padding:11px 14px;font-size:12px;color:var(--text2);">${a.accion}</div>
+        <div style="padding:11px 14px;"><span style="background:var(--surface);color:var(--text3);padding:3px 8px;border-radius:8px;font-size:10px;font-weight:600;">${a.modulo}</span></div>
+      </div>`;
+    }).join('');
+  }
+
+  function simularExportLog() {
+    const modal = document.getElementById('log-pdf-modal');
+    modal.style.display = 'flex';
+    document.getElementById('log-pdf-icon').textContent  = '📄';
+    document.getElementById('log-pdf-title').textContent = 'Exportando log...';
+    document.getElementById('log-pdf-sub').textContent   = 'Preparando registros de auditoría';
+    document.getElementById('log-pdf-fill').style.width  = '0%';
+    document.getElementById('log-pdf-btn').style.display = 'none';
+    const pasos = [
+      { pct:'40%', txt:'🔍 Filtrando registros...', delay:300  },
+      { pct:'75%', txt:'📋 Generando CSV/PDF...',   delay:1100 },
+      { pct:'100%',txt:'✓ Listo',                   delay:2000 },
+    ];
+    pasos.forEach(p => setTimeout(() => {
+      document.getElementById('log-pdf-fill').style.width = p.pct;
+      document.getElementById('log-pdf-steps').textContent = p.txt;
+    }, p.delay));
+    setTimeout(() => {
+      document.getElementById('log-pdf-icon').textContent  = '✅';
+      document.getElementById('log-pdf-title').textContent = '¡Log exportado!';
+      document.getElementById('log-pdf-sub').textContent   = 'Auditoria_2026-03-06.csv · 84 KB';
+      document.getElementById('log-pdf-btn').style.display = 'block';
+    }, 2600);
+  }
+
+  // Inicializar
+  renderMedicos();
+  renderHorarios();
+  renderUsuarios();
+  renderAuditoria();
+  
+  // ══════════════════════════════
+  // ESPECIALIDADES
+  // ══════════════════════════════
+  let espData = [
+    { nombre:'Urgencias',     icono:'🚨', medicos:3, dias:'Lun–Dom', inicio:'07:00', fin:'22:00', activo:true  },
+    { nombre:'Cardiología',   icono:'🫀', medicos:3, dias:'Lun–Vie', inicio:'08:00', fin:'18:00', activo:true  },
+    { nombre:'Neumología',    icono:'🫁', medicos:2, dias:'Lun–Sáb', inicio:'07:00', fin:'14:00', activo:true  },
+    { nombre:'Neurología',    icono:'🧠', medicos:2, dias:'Lun–Vie', inicio:'09:00', fin:'17:00', activo:true  },
+    { nombre:'Traumatología', icono:'🦴', medicos:4, dias:'24/7',    inicio:'00:00', fin:'23:59', activo:true  },
+    { nombre:'Med. General',  icono:'🩺', medicos:2, dias:'Lun–Sáb', inicio:'08:00', fin:'20:00', activo:false },
+  ];
+
+  function renderEspecialidades() {
+    const grid = document.getElementById('esp-grid');
+    if (!grid) return;
+    grid.innerHTML = espData.map((e, i) => {
+      const estadoBg = e.activo ? '#D1FAE5' : '#FEE2E2';
+      const estadoC  = e.activo ? '#059669' : '#DC2626';
+      const estadoT  = e.activo ? '● Activa' : '● Inactiva';
+      const horario  = e.dias === '24/7' ? '24/7' : `${e.dias} · ${e.inicio}–${e.fin}`;
+      return `<div style="background:white;border-radius:var(--radius-lg);border:1px solid var(--border);padding:22px;box-shadow:var(--shadow);transition:box-shadow 0.2s;" onmouseover="this.style.boxShadow='var(--shadow-lg)'" onmouseout="this.style.boxShadow='var(--shadow)'">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px;">
+          <div style="display:flex;align-items:center;gap:14px;">
+            <div style="width:52px;height:52px;border-radius:14px;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:26px;">${e.icono}</div>
+            <div>
+              <div style="font-size:15px;font-weight:700;color:var(--text);">${e.nombre}</div>
+              <div style="font-size:12px;color:var(--text3);margin-top:2px;">👨‍⚕️ ${e.medicos} médico${e.medicos>1?'s':''} asignado${e.medicos>1?'s':''}</div>
+            </div>
+          </div>
+          <span style="background:${estadoBg};color:${estadoC};padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;flex-shrink:0;">${estadoT}</span>
+        </div>
+        <div style="background:var(--surface);border-radius:10px;padding:10px 14px;margin-bottom:16px;">
+          <div style="font-size:11px;color:var(--text3);font-weight:600;margin-bottom:3px;text-transform:uppercase;">Horario de atención</div>
+          <div style="font-size:13px;font-weight:600;color:var(--text);">🕐 ${horario}</div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button onclick="abrirModalEsp(${i})" class="btn-sm" style="flex:1;justify-content:center;font-size:12px;">✏️ Editar</button>
+          <button onclick="toggleEsp(${i})" class="btn-sm" style="flex:1;justify-content:center;font-size:12px;color:${e.activo?'var(--danger)':'var(--success)'};border-color:${e.activo?'var(--danger)':'var(--success)'};">${e.activo?'⏸ Desactivar':'▶ Activar'}</button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  let editandoEsp = -1;
+  function abrirModalEsp(i) {
+    editandoEsp = i;
+    const e = i >= 0 ? espData[i] : null;
+    document.getElementById('modal-esp-title').textContent = e ? 'Editar especialidad' : 'Agregar especialidad';
+    document.getElementById('esp-form-nombre').value = e ? e.nombre : '';
+    document.getElementById('esp-form-icono').value  = e ? e.icono  : '🏥';
+    document.getElementById('esp-form-inicio').value = e ? e.inicio : '08:00';
+    document.getElementById('esp-form-fin').value    = e ? e.fin    : '18:00';
+    document.getElementById('esp-form-dias').value   = e ? e.dias   : 'Lun–Vie';
+    document.getElementById('modal-esp').style.display = 'flex';
+  }
+
+  function guardarEsp() {
+    const nombre = document.getElementById('esp-form-nombre').value.trim();
+    if (!nombre) return;
+    const entry = {
+      nombre,
+      icono:   document.getElementById('esp-form-icono').value  || '🏥',
+      inicio:  document.getElementById('esp-form-inicio').value,
+      fin:     document.getElementById('esp-form-fin').value,
+      dias:    document.getElementById('esp-form-dias').value,
+      medicos: editandoEsp >= 0 ? espData[editandoEsp].medicos : 0,
+      activo:  editandoEsp >= 0 ? espData[editandoEsp].activo  : true,
+    };
+    if (editandoEsp >= 0) espData[editandoEsp] = entry;
+    else espData.push(entry);
+    document.getElementById('modal-esp').style.display = 'none';
+    renderEspecialidades();
+  }
+
+  function toggleEsp(i) {
+    espData[i].activo = !espData[i].activo;
+    renderEspecialidades();
+  }
+
+  // ══════════════════════════════
+  // CONFIGURACIÓN
+  // ══════════════════════════════
+  const switchState = {};
+
+  function toggleSwitch(id) {
+    switchState[id] = !switchState[id];
+    const el   = document.getElementById(id);
+    const dot  = el.querySelector('div');
+    const isOn = switchState[id] !== false;
+    el.style.background = isOn ? 'var(--blue)' : '#CBD5E1';
+    dot.style.right     = isOn ? '3px' : 'calc(100% - 21px)';
+  }
+
+  function testN8n() {
+    const badge = document.getElementById('n8n-status-badge');
+    badge.style.background = '#FEF3C7';
+    badge.style.color      = '#D97706';
+    badge.textContent      = '⏳ Probando...';
+    setTimeout(() => {
+      badge.style.background = '#D1FAE5';
+      badge.style.color      = '#059669';
+      badge.textContent      = '● Conectado';
+    }, 1800);
+  }
+
+  function simularGuardarConfig() {
+    const toast = document.getElementById('config-toast');
+    toast.style.display = 'flex';
+    setTimeout(() => { toast.style.display = 'none'; }, 3000);
+  }
+
+  // Inicializar
+  renderEspecialidades();
+  
 </script>
